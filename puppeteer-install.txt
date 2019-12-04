@@ -1,0 +1,18 @@
+https://brickyang.github.io/2019/01/14/%E5%9B%BD%E5%86%85%E4%B8%8B%E8%BD%BD%E5%AE%89%E8%A3%85-Puppeteer-%E7%9A%84%E6%96%B9%E6%B3%95/
+https://npm.taobao.org/package/puppeteer-cn
+
+
+国内带Chromium安装使用：npm install puppeteer-chromium-resolver --save    
+
+npm i puppeteer-core
+
+npm install  puppeteer-cn
+
+国内文档网站：https://zhaoqize.github.io/puppeteer-api-zh_CN/#/
+
+npm下载的网站：https://www.npmjs.com/package/puppeteer
+
+国内镜像网站：https://npm.taobao.org/package/puppeteer-cn
+
+
+PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors npm install puppeteer
