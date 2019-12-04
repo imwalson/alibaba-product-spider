@@ -21,7 +21,8 @@ const headers = {
 async function initBrowser () {
   console.log('开始初始化 puppeteer');
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
+    ignoreHTTPSErrors: true,
     ignoreDefaultArgs: ["--enable-automation"],
     args: [
       '--disable-gpu',
@@ -37,6 +38,31 @@ async function initBrowser () {
   });
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 720 });
+  // 开启拦截器
+  await page.setRequestInterception(true);
+  // abort 掉视频、图片请求，节约内存
+  page.on('request', request => {
+    const url = request.url().toLowerCase()
+    const resourceType = request.resourceType()
+
+    if (resourceType.toLowerCase() === "image" ||
+      url.endsWith('.jpg') ||
+      url.endsWith('.png') ||
+      url.endsWith('.gif') ||
+      url.endsWith('.jpeg') ||
+      resourceType == 'media' ||
+      url.endsWith('.mp4') ||
+      url.endsWith('.avi') ||
+      url.endsWith('.flv') ||
+      url.endsWith('.mov') ||
+      url.endsWith('.wmv')) {
+
+      // console.log(`ABORTING: ${resourceType}`)
+      request.abort();
+    }
+    else
+      request.continue();
+  })
   console.log('初始化 puppeteer 完成');
   return {page,browser};
 }
@@ -48,7 +74,7 @@ async function parseVideoUrlFromPage(page, url) {
   });
   // 等待页面元素
   try {
-    await page.waitForSelector('.bc-video-player', { timeout: 5000 }); 
+    await page.waitForSelector('.bc-video-player', { timeout: 10000 }); 
   } catch (error) {
     console.log('未找到视频元素');
     return null;
@@ -201,7 +227,7 @@ async function main(listUrl, num) {
     console.log('任务抓取失败!');
     console.log(e.message);
     await browser.close();
-    process.exit(0);
+    // process.exit(0);
   }
 }
 // main('https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI', 5)

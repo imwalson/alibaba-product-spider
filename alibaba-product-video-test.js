@@ -21,7 +21,7 @@ async function getResourceContent(page, url) {
 
 (async () => {
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     ignoreDefaultArgs: ["--enable-automation"],
     args: [
       '--disable-gpu',
