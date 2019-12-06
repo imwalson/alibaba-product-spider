@@ -8,6 +8,7 @@ const _ = require('lodash');
 const yargs = require('yargs').argv;
 const xlsx = require('node-xlsx');
 const makeDir = require('make-dir');
+const url = require('url');
 
 const itemSelector = `.m-gallery-product-item-v2`;
 const videoMarkSelector = '.seb-img-switcher__icon-video';
@@ -31,13 +32,26 @@ async function initBrowser () {
       '--no-first-run',
       '--no-sandbox',
       '--no-zygote',
-      '--single-process'
+      '--single-process',
+      "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
     ],
     slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
     devtools: false 
   });
+  console.log('初始化 puppeteer 完成');
+  return browser;
+}
+
+async function getNewPage(browser) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1440, height: 720 });
+  // 自动隐藏弹出框
+  page.on('dialog', async dialog => {
+    await dialog.dismiss();
+  });
+  // 允许权限
+  const context = browser.defaultBrowserContext();
+  context.overridePermissions("https://www.alibaba.com", ["geolocation", "notifications"]);
   // 开启拦截器
   await page.setRequestInterception(true);
   // abort 掉视频、图片请求，节约内存
@@ -55,7 +69,8 @@ async function initBrowser () {
       url.endsWith('.avi') ||
       url.endsWith('.flv') ||
       url.endsWith('.mov') ||
-      url.endsWith('.wmv')) {
+      url.endsWith('.wmv') ||
+      url.indexOf('is.alicdn.com') >= 0) {
 
       // console.log(`ABORTING: ${resourceType}`)
       request.abort();
@@ -63,14 +78,17 @@ async function initBrowser () {
     else
       request.continue();
   })
-  console.log('初始化 puppeteer 完成');
-  return {page,browser};
+  console.log('初始化 page 完成');
+  return page;
 }
 
-async function parseVideoUrlFromPage(page, url) {
+async function parseVideoUrlFromPage(browser, url) {
   console.log('打开产品页面: ' + url);
+  let page = await getNewPage(browser);
+  await page.waitFor(1000);
   await page.goto( url, {
-    waitUntil: 'domcontentloaded'
+    waitUntil: 'domcontentloaded',
+    timeout: 0
   });
   // 等待页面元素
   try {
@@ -81,11 +99,17 @@ async function parseVideoUrlFromPage(page, url) {
   }
   const videoUrl = await page.$eval('.bc-video-player video', ele => ele.src);
   console.log('找到视频url: ' + videoUrl);
-  return videoUrl;
+  const breadcrumbs = await page.$$eval('.detail-breadcrumb .breadcrumb-item .breadcrumb-link span', function(eles){
+    return eles.map( item => item.innerText ) 
+  }); 
+  let name = breadcrumbs[breadcrumbs.length - 1];
+  name = _.trim(name);
+  await page.close();
+  return {videoUrl, name};
 }
 
 async function downloadVideo (url, name) {  
-  console.log(`下载视频，pid: ${name}`);
+  console.log(`下载视频: ${name}`);
   const savePath = path.resolve(__dirname, 'download', name)
   const writer = fs.createWriteStream(savePath)
 
@@ -132,14 +156,29 @@ async function exportExcel(data, isVideo) {
 
 }
 
-async function findProductList(page, listUrl, num) {
-  // const page = await initBrowser();
-  console.log(`子类产品列表地址: ` + listUrl);
-  console.log(`产品抓取目标数量: ` + num);
-  // const resp = await axios.get(listUrl, { headers });
-  // const data = resp.data;
+function changeURLArg(url, arg, arg_val) {
+  var pattern = arg + '=([^&]*)';
+  var replaceText = arg + '=' + arg_val;
+  if (url.match(pattern)) {
+    var tmp = '/(' + arg + '=)([^&]*)/gi';
+    tmp = url.replace(eval(tmp), replaceText);
+    return tmp;
+  } else {
+    if (url.match('[\?]')) {
+      return url + '&' + replaceText;
+    } else {
+      return url + '?' + replaceText;
+    }
+  }
+  return url + '\n' + arg + '\n' + arg_val;
+}
+
+// 从列表页中找出指定数量的产品，递归调用
+let allProducts = [];
+async function findProductListFromPage(page, listUrl, num, callback) {
   await page.goto( listUrl, {
-    waitUntil: 'domcontentloaded'
+    waitUntil: 'domcontentloaded',
+    timeout: 0
   });
   await page.waitFor(2000);
   const data = await page.content();
@@ -185,34 +224,76 @@ async function findProductList(page, listUrl, num) {
   products = _.filter(products, 'hasVideo');
   console.log(`本页包含视频的产品实际数量: ` + products.length);
   // console.log(products);
+  var needMore = (num > products.length) ? true : false;
+  var moreNum = needMore && (num - products.length);
   let toSpide = _.take(products, num);
   // console.log(toSpide);
   toSpide = _.filter(toSpide,function(p){ return p.pid });
-  await exportExcel(toSpide.map( (item) => { return [item.pid, item.itemLink] }));
-  return toSpide;
+  // 是否还有下一页
+  let currentPage = url.parse(listUrl, {parseQueryString: true}).query.page || 1;
+  currentPage = parseInt(currentPage);
+  console.log('currentPage=' + currentPage);
+  let nextEle = $('.ui2-pagination-pages>.next');
+  // console.log('下一页dom元素：');
+  // console.log(nextEle);
+  // let hasNext = nextEle.length ? true : false;
+  let nextPageUrl = changeURLArg(listUrl, 'page', currentPage + 1);
+  allProducts = _.union(allProducts, toSpide);
+  // let results = {
+  //   needMore: needMore,
+  //   moreNum: moreNum,
+  //   nextPageUrl: nextPageUrl
+  // }
+  // console.log(results);
+  if(needMore) {
+    console.log('产品数量不足，下一页 url:' + nextPageUrl);
+    findProductListFromPage(page, nextPageUrl, moreNum, callback);
+  } else {
+    page.close();
+    callback && callback();
+  }
+  
 }
 
-async function main(listUrl, num) {
-  const instance = await initBrowser ();
-  const browser = instance.browser;
-  const page = instance.page;
+function fancyTimeFormat(time)
+{   
+    // Hours, minutes and seconds
+    var hrs = ~~(time / 3600);
+    var mins = ~~((time % 3600) / 60);
+    var secs = ~~time % 60;
+
+    // Output like "1:01" or "4:03:59" or "123:03:59"
+    var ret = "";
+
+    if (hrs > 0) {
+        ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+    }
+
+    ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+    ret += "" + secs;
+    return ret;
+}
+
+async function main(browser, toSpideProducts, startTime) {
   try {
     await Promise.all([
       makeDir('download'),
       makeDir('inputExcels'),
       makeDir('outputExcels'),
     ]);
-    const toSpideProducts = await findProductList(page, listUrl, num);
-    console.log('待抓取列表：');
-    console.log(toSpideProducts);
+    await exportExcel(toSpideProducts.map( (item) => { return [item.pid, item.itemLink] }))
+    // console.log('待抓取列表');
+    // console.log(toSpideProducts);
     const len = toSpideProducts.length;
     let dataList = [];
     for (let i=0; i<len; i++) {
       let product = toSpideProducts[i];
       try {
-        let videoUrl = await parseVideoUrlFromPage(page, product.itemLink);
-        await downloadVideo (videoUrl, product.pid + '.mp4');
-        dataList.push([product.pid, product.itemLink, videoUrl]);
+        let videoInfo = await parseVideoUrlFromPage(browser, product.itemLink);
+        let videoUrl = videoInfo.videoUrl;
+        let productName = videoInfo.name;
+        await downloadVideo (videoUrl, product.pid + '_' + productName + '.mp4');
+        dataList.push([product.pid, productName, product.itemLink, videoUrl]);
       } catch (error) {
         console.log('error:');
         console.log(error);
@@ -220,6 +301,12 @@ async function main(listUrl, num) {
       }
     }
     console.log('任务抓取成功!');
+    if(startTime) {
+      var end = (new Date()).getTime();
+      var using = (end - startTime) / 1000;
+      console.log('总用时: ' + fancyTimeFormat(using));
+    }
+
     await exportExcel(dataList, true);
     await browser.close();
     process.exit(0);
@@ -230,9 +317,20 @@ async function main(listUrl, num) {
     // process.exit(0);
   }
 }
-// main('https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI', 5)
 
-function run() {
+// TODO: 增加一个方法，导入 csv 抓取详情页视频
+
+// async function test() {
+//   const instance = await initBrowser ();
+//   const page = instance.page;
+//   findProductListFromPage(page, 'https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI', 100, function(){
+//     main(instance, toSpideProducts, num)
+//   });
+// }
+// test();
+
+async function run() {
+  var startTime = (new Date()).getTime();
   const listUrl = yargs['listurl'] || '';
   let num = yargs['num'] || 5;
   num = parseInt(num);
@@ -244,6 +342,12 @@ function run() {
     console.log('num');
     return;
   }
-  main(listUrl, num)
+  console.log(`产品抓取目标数量: ` + num);
+  const browser = await initBrowser ();
+  const page = await getNewPage(browser);
+  findProductListFromPage(page, listUrl, num, function(){
+    main(browser, allProducts, startTime)
+  });
 }
+
 run();
