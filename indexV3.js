@@ -106,7 +106,9 @@ function parseExcel(filePath) {
     var rowCount = sheetData.length;
     for (let i = 0; i < rowCount; i++) {
       let rowData = sheetData[i];
-      pids.push(rowData[0]);
+      if (rowData[0]) {
+        pids.push(rowData[0]);
+      }
     }
   }
   console.log("pids count = " + pids.length);
@@ -137,8 +139,9 @@ async function exportExcel(data) {
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
-      '.ma-spec-price .pre-inquiry-price span',
-      '.ma-reference-price .ma-ref-price span'
+      // '.ma-spec-price .pre-inquiry-price span',
+      // '.ma-reference-price .ma-ref-price span',
+      '.ma-spec-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
       let selector = priceSelectorRules[i];
@@ -320,7 +323,7 @@ async function runScript() {
             console.log('创建文件夹');
             await makeDir(pathDir);
             try {
-              await downloadVideo (videoUrl, pid + '_' + productName + '.mp4', pathDir);
+              await downloadVideo (videoUrl, pid + '_' + productName + '_' + price + '.mp4', pathDir);
             } catch (error) {
               let info = [ pid, 'error', "下载视频失败" ];
               data.push(info);

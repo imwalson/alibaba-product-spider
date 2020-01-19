@@ -86,8 +86,7 @@ async function getNewPage(browser) {
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
-      '.ma-spec-price .pre-inquiry-price span',
-      '.ma-reference-price .ma-ref-price span'
+      '.ma-spec-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
       let selector = priceSelectorRules[i];
@@ -368,7 +367,7 @@ async function main(browser, toSpideProducts, startTime) {
         let videoUrl = videoInfo.videoUrl;
         let productName = videoInfo.name;
         let price = videoInfo.price;
-        await downloadVideo (videoUrl, product.pid + '_' + productName + '.mp4');
+        await downloadVideo (videoUrl, product.pid + '_' + productName + '_' + price + '.mp4');
         dataList.push([product.pid, productName, product.itemLink, videoUrl, price]);
       } catch (error) {
         console.log('error:');
