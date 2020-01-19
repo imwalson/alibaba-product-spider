@@ -133,6 +133,82 @@ async function exportExcel(data) {
 
 }
 
+// 从详情页中解析产品价格
+async function findPriceFromPage(page) {
+  try {
+    const priceSelectorRules = [
+      '.ma-spec-price .pre-inquiry-price span',
+      '.ma-reference-price .ma-ref-price span'
+    ];
+    for (let i = 0; i < priceSelectorRules.length; i ++) {
+      let selector = priceSelectorRules[i];
+      try {
+        let price = await page.$eval(selector, function(ele){
+          return ele.innerText
+        }); 
+        console.log('找到产品 price: ' + price);
+        if (price.indexOf(' - ') >= 0) {
+          price = price.split(' - ')[0];
+        }
+        return price;
+        break;
+      } catch(e) {
+        continue;
+      }
+    }
+    console.log('解析价格失败');
+    return '';
+  } catch(err) {
+    console.log('解析价格失败');
+    return '';
+  }
+}
+
+// 设置汇率
+async function setPageCurrency(currency = 'USD') {
+  console.log('设置汇率: ' + currency);
+  let browser;
+  let page;
+  try {
+    browser = await initBrowser ();
+    page = await getNewPage(browser);
+    const url = 'https://www.alibaba.com';
+    await page.waitFor(500);
+    await page.goto( url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 0
+    });
+    await page.waitFor(1000);
+    // 获取 cookies
+    // const cookies = await page.cookies(url);
+    // console.log(cookies);
+    await page.setCookie({
+      name: 'sc_g_cfg_f',
+      value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
+      domain: '.alibaba.com',
+      path: '/',
+      expires: 3726915447.990282,
+    });
+    console.log('设置汇率完成');
+    await page.close();
+    await browser.close();
+    return currency;
+  } catch (error) {
+    console.log('设置 cookies 失败');
+    if (page) {
+      await page.close();
+      console.log('关闭页面');
+    }
+    if (browser) {
+      await browser.close();
+    }
+    return null;
+  }
+}
+
+// setPageCurrency();
+
+// 从详情页中解析信息
 async function parseVideoUrlFromPage(url) {
   console.log('打开产品页面: ' + url);
   let browser;
@@ -154,9 +230,11 @@ async function parseVideoUrlFromPage(url) {
     }); 
     let name = breadcrumbs[breadcrumbs.length - 1];
     name = _.trim(name);
+    // 找产品价格：
+    const price = await findPriceFromPage(page);
     await page.close();
     await browser.close();
-    return {videoUrl, name};
+    return {videoUrl, name, price};
   } catch (error) {
     console.log('未找到视频元素');
     console.log(error);
@@ -220,6 +298,8 @@ async function runScript() {
     const pids = parseExcel(yargPath);
     const urls = _.map(pids, (item) => { return spliceProductUrl(item) });
     console.log(`总共${urls.length}条产品`);
+    // 设置汇率
+    await setPageCurrency('INR');
     // 挨个访问产品详情页，获取视频和产品名
     console.log('============= step 2: 获取产品详情 =============');
     for(let i = 0; i < urls.length; i ++) {
@@ -228,13 +308,16 @@ async function runScript() {
       // console.log(`开始访问第 ${i+1}/${urls.length} 个产品详情页： ${url}`);
       try {
         let videoInfo = await parseVideoUrlFromPage(url);
+        console.log('videoInfo：' + JSON.stringify(videoInfo));
         if(videoInfo) {
           let videoUrl = videoInfo.videoUrl;
           let productName = videoInfo.name;
+          let price = videoInfo.price;
           productName = _.trim(productName);
           productName = _.replace(productName, '/', 'or');
           if(productName) {
             let pathDir = 'download/' + productName;
+            console.log('创建文件夹');
             await makeDir(pathDir);
             try {
               await downloadVideo (videoUrl, pid + '_' + productName + '.mp4', pathDir);
@@ -244,7 +327,7 @@ async function runScript() {
               console.log('下载视频失败');
             }
 
-            let info = [ pid, productName ];
+            let info = [ pid, productName, price ];
             data.push(info);
             console.log('产品详情获取成功');
             // console.log(info);
