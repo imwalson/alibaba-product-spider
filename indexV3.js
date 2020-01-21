@@ -11,6 +11,9 @@ const makeDir = require('make-dir');
 function getArgPath() {
   return yargs['path'] || '';
 }
+function getArgCurrency() {
+  return yargs['currency'] || 'USD';
+}
 
 /**
 * 异步延迟
@@ -139,8 +142,7 @@ async function exportExcel(data) {
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
-      // '.ma-spec-price .pre-inquiry-price span',
-      // '.ma-reference-price .ma-ref-price span',
+      '.ma-ref-price span',
       '.ma-spec-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
@@ -167,14 +169,12 @@ async function findPriceFromPage(page) {
   }
 }
 
-// 设置汇率
+// 设置价格单位 cookies
 async function setPageCurrency(currency = 'USD') {
   console.log('设置汇率: ' + currency);
   let browser;
   let page;
   try {
-    browser = await initBrowser ();
-    page = await getNewPage(browser);
     const url = 'https://www.alibaba.com';
     await page.waitFor(500);
     await page.goto( url, {
@@ -189,7 +189,7 @@ async function setPageCurrency(currency = 'USD') {
       name: 'sc_g_cfg_f',
       value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
       domain: '.alibaba.com',
-      path: '/',
+      // path: '/',
       expires: 3726915447.990282,
     });
     console.log('设置汇率完成');
@@ -209,8 +209,6 @@ async function setPageCurrency(currency = 'USD') {
   }
 }
 
-// setPageCurrency();
-
 // 从详情页中解析信息
 async function parseVideoUrlFromPage(url) {
   console.log('打开产品页面: ' + url);
@@ -224,6 +222,23 @@ async function parseVideoUrlFromPage(url) {
       waitUntil: 'domcontentloaded',
       timeout: 0
     });
+    // 设置价格单位
+    const currency = getArgCurrency();
+    console.log('设置价格单位: ' + currency);
+    await page.setCookie({
+      name: 'sc_g_cfg_f',
+      value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
+      domain: 'www.alibaba.com'
+    });
+    // 刷新页面
+    await page.waitFor(500);
+    await page.goto( url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 0
+    });
+    // 获取 cookies
+    // const cookies = await page.cookies();
+    // console.log(cookies);
     // 等待页面元素
     await page.waitForSelector('.bc-video-player', { timeout: 6000 }); 
     const videoUrl = await page.$eval('.bc-video-player video', ele => ele.src);
@@ -301,8 +316,7 @@ async function runScript() {
     const pids = parseExcel(yargPath);
     const urls = _.map(pids, (item) => { return spliceProductUrl(item) });
     console.log(`总共${urls.length}条产品`);
-    // 设置汇率
-    await setPageCurrency('INR');
+    // await setPageCurrency('INR');
     // 挨个访问产品详情页，获取视频和产品名
     console.log('============= step 2: 获取产品详情 =============');
     for(let i = 0; i < urls.length; i ++) {
@@ -367,7 +381,7 @@ runScript();
 * 使用方法：
 * 1.存放输入文件到 inputExcels 文件夹，如 pids1.xlsx
 * 2.运行命令：(input-1.xlsx 替换为实际文件名)
-*   node indexV3.js --path='./inputExcels/pids1.xlsx' 
+*   node indexV3.js --path='./inputExcels/pids1.xlsx'  --currency='USD'
 * 3.脚本运行完毕会输出文件名，去 outputExcels 文件夹中寻找对应文件
 * *
 * 建议： 输入的 excel 文件不应该过大，如果过大(超过 300 行)，请分多次抓取

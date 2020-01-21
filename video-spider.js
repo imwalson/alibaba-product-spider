@@ -19,6 +19,10 @@ const headers = {
   "accept": 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
 };
 
+function getArgCurrency() {
+  return yargs['currency'] || 'USD';
+}
+
 async function initBrowser () {
   console.log('开始初始化 puppeteer');
   const browser = await puppeteer.launch({
@@ -86,6 +90,7 @@ async function getNewPage(browser) {
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
+      '.ma-ref-price span',
       '.ma-spec-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
@@ -109,7 +114,7 @@ async function findPriceFromPage(page) {
   }
 }
 
-// 设置汇率
+// 设置价格单位 cookies
 async function setPageCurrency(currency = 'USD') {
   console.log('设置汇率: ' + currency);
   let browser;
@@ -160,6 +165,23 @@ async function parseVideoUrlFromPage(browser, url) {
     waitUntil: 'domcontentloaded',
     timeout: 0
   });
+  // 设置价格单位
+    const currency = getArgCurrency();
+    console.log('设置价格单位: ' + currency);
+    await page.setCookie({
+      name: 'sc_g_cfg_f',
+      value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
+      domain: 'www.alibaba.com'
+    });
+    // 刷新页面
+    await page.waitFor(500);
+    await page.goto( url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 0
+    });
+    // 获取 cookies
+    // const cookies = await page.cookies();
+    // console.log(cookies);
   // 等待页面元素
   try {
     await page.waitForSelector('.bc-video-player', { timeout: 10000 }); 
@@ -354,7 +376,7 @@ async function main(browser, toSpideProducts, startTime) {
       makeDir('outputExcels'),
     ]);
     // 设置汇率
-    await setPageCurrency('INR');
+    // await setPageCurrency('INR');
     await exportExcel(toSpideProducts.map( (item) => { return [item.pid, item.itemLink] }))
     // console.log('待抓取列表');
     // console.log(toSpideProducts);

@@ -21,7 +21,7 @@ scripts for businees team
 1.运行命令：(input-1.xlsx 替换为实际文件名)
 
 ```
-node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI' --num=5
+node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI' --num=5  --currency='INR'
 ```
 
 2.脚本运行完毕会输出文件，pid 列表在 outputExcels 文件夹中；视频文件在 download 文件夹中
@@ -31,7 +31,7 @@ node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-ma
 
 2.运行命令：(input-1.xlsx 替换为实际文件名)
 ```
-  node indexV3.js --path='./inputExcels/pids1.xlsx' 
+  node indexV3.js --path='./inputExcels/pids1.xlsx'  --currency='INR'
 ```
 
 ### 原理简介
