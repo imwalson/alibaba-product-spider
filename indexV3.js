@@ -228,7 +228,7 @@ async function parseVideoUrlFromPage(url) {
     await page.setCookie({
       name: 'sc_g_cfg_f',
       value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
-      domain: 'www.alibaba.com'
+      domain: '.alibaba.com'
     });
     // 刷新页面
     await page.waitFor(500);
