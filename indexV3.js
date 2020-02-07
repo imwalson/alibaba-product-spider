@@ -138,25 +138,45 @@ async function exportExcel(data) {
 
 }
 
+function getMinPrice(arr) {
+  if (!arr.length) {
+    return '';
+  }
+  arr = _.sortBy(arr, function(item) {
+    return parseFloat(item.substr(1).replace(/,/g, ""));
+  })
+  console.log(arr);
+  return arr[0];
+}
+
 // 从详情页中解析产品价格
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
       '.ma-ref-price span',
       '.ma-spec-price span',
+      '.ma-reference-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
       let selector = priceSelectorRules[i];
       try {
-        let price = await page.$eval(selector, function(ele){
-          return ele.innerText
-        }); 
-        console.log('找到产品 price: ' + price);
-        if (price.indexOf(' - ') >= 0) {
-          price = price.split(' - ')[0];
+        let prices = await page.$$eval(selector, function(eles){
+          return eles.map(item => {
+            let price = item.innerText;
+            if (price.indexOf(' - ') >= 0) {
+              price = price.split(' - ')[0];
+            }
+            return price;
+          })
+        });
+        if (prices.length) {
+          const minPrice = getMinPrice(prices);
+          console.log('找到产品 price: ' + minPrice);
+          return minPrice;
+          break;
+        } else {
+          continue;
         }
-        return price;
-        break;
       } catch(e) {
         continue;
       }
@@ -188,9 +208,7 @@ async function setPageCurrency(currency = 'USD') {
     await page.setCookie({
       name: 'sc_g_cfg_f',
       value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
-      domain: '.alibaba.com',
-      // path: '/',
-      expires: 3726915447.990282,
+      domain: '.alibaba.com'
     });
     console.log('设置汇率完成');
     await page.close();

@@ -26,7 +26,7 @@ function getArgCurrency() {
 async function initBrowser () {
   console.log('开始初始化 puppeteer');
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     ignoreHTTPSErrors: true,
     ignoreDefaultArgs: ["--enable-automation"],
     args: [
@@ -86,25 +86,48 @@ async function getNewPage(browser) {
   return page;
 }
 
+function getMinPrice(arr) {
+  if (!arr.length) {
+    return '';
+  }
+  arr = _.sortBy(arr, function(item) {
+    return parseFloat(item.substr(1).replace(/,/g, ""));
+  })
+  console.log(arr);
+  return arr[0];
+}
+
 // 从详情页中解析产品价格
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
       '.ma-ref-price span',
       '.ma-spec-price span',
+      '.ma-reference-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
       let selector = priceSelectorRules[i];
       try {
-        const price = await page.$eval(selector, function(ele){
-          return ele.innerText
-        }); 
-        console.log('找到产品 price: ' + price);
-        if (price.indexOf(' - ') >= 0) {
-          price = price.split(' - ')[0];
+        let prices = await page.$$eval(selector, function(eles){
+          return eles.map(item => {
+            let price = item.innerText;
+            if (price.indexOf(' - ') >= 0) {
+              price = price.split(' - ')[0];
+            }
+            return price;
+          })
+        });
+        if (prices.length) {
+          const minPrice = getMinPrice(prices);
+          console.log('找到产品 price: ' + minPrice);
+          return minPrice;
+          break;
+        } else {
+          continue;
         }
-        return price;
-      } catch(e) {}
+      } catch(e) {
+        continue;
+      }
     }
     console.log('解析价格失败');
     return '';

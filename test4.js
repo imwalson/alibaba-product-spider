@@ -1,89 +1,182 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
-const url = 'https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI';
-const itemSelector = `.m-gallery-product-item-v2`;
-const videoMarkSelector = '.seb-img-switcher__icon-video';
-const videoMarkSelector2 = '.watermark.has-video';
+const puppeteer = require('puppeteer');
+const _ = require('lodash');
 
-const headers = {
-  "user-agen": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3596.0 Safari/537.36',
-  "accept": 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
-};
-
-async function run() {
-  try {
-    const resp = await axios.get(url, { headers });
-    var data = resp.data;
-    var $ = cheerio.load(data);
-    var products = [];
-    //console.log($('.m-gallery-product-item-v2').html());
-    $(itemSelector).each(function(index,element){
-      const $element = $(element);
-      let obj = {};
-      var hasVideo;
-      var hasVideo1 = $element.find(videoMarkSelector).first().length;
-      var hasVideo2 = $element.find(videoMarkSelector2).first().length;
-      if(!hasVideo1 && !hasVideo2) {
-        hasVideo = false;
-      } else {
-        hasVideo = true;
-      }
-      var itemLink = $element.find('.item-img-inner > a').first().attr('href');  
-      var pid = $element.find('.item-img-inner > a').first().attr('data-p4plog'); 
-      // console.log(`---- hasVideo: ${hasVideo} ----`);
-      // console.log(`---- itemLink: ${itemLink} ----`);
-      
-      obj.hasVideo = hasVideo;
-      obj.itemLink = itemLink;
-      obj.pid = pid;
-      obj.create_at = (new Date()).getTime();
-      obj.crawled = false; // 是否已爬取详情
-
-      products.push(obj);
-    })
-    console.log(products);
-  } catch (error) {
-    console.log("script error: " + error.message)
-  }
+async function initBrowser () {
+  console.log('开始初始化 puppeteer');
+  const browser = await puppeteer.launch({
+    headless: false,
+    ignoreHTTPSErrors: true,
+    ignoreDefaultArgs: ["--enable-automation"],
+    args: [
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--disable-setuid-sandbox',
+      '--no-first-run',
+      '--no-sandbox',
+      '--no-zygote',
+      '--single-process',
+      "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
+    ],
+    slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
+    devtools: false 
+  });
+  console.log('初始化 puppeteer 完成');
+  return browser;
 }
-// run();
 
-async function searchVideo(url) {
-  try {
-    const resp = await axios.get(url, { headers });
-    var data = resp.data;
-    var $ = cheerio.load(data);
-    var video = $('video').first();
-    if(video.length) {
-      var videoUrl = video.attr('src');
-      console.log(videoUrl);
-    }else {
-      console.log('video not found');
+async function getNewPage(browser) {
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1440, height: 720 });
+  // 自动隐藏弹出框
+  page.on('dialog', async dialog => {
+    await dialog.dismiss();
+  });
+  // 允许权限
+  const context = browser.defaultBrowserContext();
+  context.overridePermissions("https://www.alibaba.com", ["geolocation", "notifications"]);
+  // 开启拦截器
+  await page.setRequestInterception(true);
+  // abort 掉视频、图片请求，节约内存
+  page.on('request', request => {
+    const url = request.url().toLowerCase()
+    const resourceType = request.resourceType()
+
+    if (resourceType.toLowerCase() === "image" ||
+      url.endsWith('.jpg') ||
+      url.endsWith('.png') ||
+      url.endsWith('.gif') ||
+      url.endsWith('.jpeg') ||
+      resourceType == 'media' ||
+      url.endsWith('.mp4') ||
+      url.endsWith('.avi') ||
+      url.endsWith('.flv') ||
+      url.endsWith('.mov') ||
+      url.endsWith('.wmv') ||
+      url.indexOf('is.alicdn.com') >= 0) {
+
+      // console.log(`ABORTING: ${resourceType}`)
+      request.abort();
     }
+    else
+      request.continue();
+  })
+  console.log('初始化 page 完成');
+  return page;
+}
+
+// 从详情页中解析信息
+async function parseVideoUrlFromPage(url) {
+  console.log('打开产品页面: ' + url);
+  let browser;
+  let page;
+  try {
+    browser = await initBrowser ();
+    page = await getNewPage(browser);
+    await page.waitFor(500);
+    await page.goto( url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 0
+    });
+    // 设置价格单位
+    const currency = 'USD';
+    console.log('设置价格单位: ' + currency);
+    await page.setCookie({
+      name: 'sc_g_cfg_f',
+      value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
+      domain: '.alibaba.com'
+    });
+    // 刷新页面
+    await page.waitFor(500);
+    await page.goto( url, {
+      waitUntil: 'domcontentloaded',
+      timeout: 0
+    });
+    // 获取 cookies
+    // const cookies = await page.cookies();
+    // console.log(cookies);
+    // 等待页面元素
+    await page.waitForSelector('.bc-video-player', { timeout: 6000 }); 
+    const videoUrl = await page.$eval('.bc-video-player video', ele => ele.src);
+    console.log('找到视频 url: ' + videoUrl);
+    const breadcrumbs = await page.$$eval('.detail-breadcrumb .breadcrumb-item .breadcrumb-link span', function(eles){
+      return eles.map( item => item.innerText ) 
+    }); 
+    let name = breadcrumbs[breadcrumbs.length - 1];
+    name = _.trim(name);
+    // 找产品价格：
+    const price = await findPriceFromPage(page);
+    await page.close();
+    await browser.close();
+    return {videoUrl, name, price};
   } catch (error) {
-    console.log("downloadVideo error: " + error.message)
+    console.log('未找到视频元素');
+    console.log(error);
+    if (page) {
+      await page.close();
+      console.log('关闭页面');
+    }
+    if (browser) {
+      await browser.close();
+    }
+    return null;
   }
 }
-// searchVideo('https://www.alibaba.com/product-detail/7-Barrel-Beer-Brewing-System-for_62236661396.html?spm=a2700.galleryofferlist.normalList.1.7da7326bCC5uI9&s=p')
 
-
-async function downloadVideo (url,fineName) {  
-  const fs = require('fs')  
-  const path = require('path')
-  const savePath = path.resolve(__dirname, 'download', fineName)
-  const writer = fs.createWriteStream(savePath)
-
-  const response = await axios({
-    url,
-    method: 'GET',
-    responseType: 'stream'
+function getMinPrice(arr) {
+  if (!arr.length) {
+    return '';
+  }
+  arr = _.sortBy(arr, function(item) {
+    return parseFloat(item.substr(1).replace(/,/g, ""));
   })
-
-  response.data.pipe(writer)
-
-  return new Promise((resolve, reject) => {
-    writer.on('finish', resolve)
-    writer.on('error', reject)
-  })
+  console.log(arr);
+  return arr[0];
 }
-downloadVideo ('https://cloud.video.alibaba.com/play/u/2153292369/p/1/e/6/t/1/d/hd/232608997105.mp4','232608997105.mp4');
+// getMinPrice(['$4,860.00','$4,660.00','$4,460.00']);
+
+// 从详情页中解析产品价格
+async function findPriceFromPage(page) {
+  try {
+    const priceSelectorRules = [
+      '.ma-ref-price span',
+      '.ma-spec-price span',
+      '.ma-reference-price span',
+    ];
+    for (let i = 0; i < priceSelectorRules.length; i ++) {
+      let selector = priceSelectorRules[i];
+      try {
+        let prices = await page.$$eval(selector, function(eles){
+          return eles.map(item => {
+            let price = item.innerText;
+            if (price.indexOf(' - ') >= 0) {
+              price = price.split(' - ')[0];
+            }
+            return price;
+          })
+        });
+        if (prices.length) {
+          const minPrice = getMinPrice(prices);
+          console.log('找到产品 price: ' + minPrice);
+          return minPrice;
+          break;
+        } else {
+          continue;
+        }
+      } catch(e) {
+        continue;
+      }
+    }
+    console.log('解析价格失败');
+    return '';
+  } catch(err) {
+    console.log('解析价格失败');
+    return '';
+  }
+}
+
+async function run(url) {
+  const videoInfo = await parseVideoUrlFromPage(url);
+  console.log('videoInfo：' + JSON.stringify(videoInfo));
+}
+// run('https://www.alibaba.com/product-detail/Newest-2-2-Seat-Off-Road_62286811640.html'); // 多个价格从大到小
+run('https://www.alibaba.com/product-detail/FX2-Wind-Sorter-for-Waste-Plastics_60800496704.html?bypass=true'); // 价格区段
