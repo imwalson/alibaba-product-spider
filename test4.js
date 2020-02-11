@@ -138,9 +138,10 @@ function getMinPrice(arr) {
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
+      '.ma-ref-price',
       '.ma-ref-price span',
       '.ma-spec-price span',
-      '.ma-reference-price span',
+      // '.ma-reference-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
       let selector = priceSelectorRules[i];
@@ -154,6 +155,8 @@ async function findPriceFromPage(page) {
             return price;
           })
         });
+        console.log('prices:');
+        console.log(prices);
         if (prices.length) {
           const minPrice = getMinPrice(prices);
           console.log('找到产品 price: ' + minPrice);
@@ -180,3 +183,4 @@ async function run(url) {
 }
 // run('https://www.alibaba.com/product-detail/Newest-2-2-Seat-Off-Road_62286811640.html'); // 多个价格从大到小
 run('https://www.alibaba.com/product-detail/FX2-Wind-Sorter-for-Waste-Plastics_60800496704.html?bypass=true'); // 价格区段
+// run('https://www.alibaba.com/product-detail/Veidoo-Cheap-Price-1GB-16GB-Quad_62347622515.html?bypass=true'); // 单个价格

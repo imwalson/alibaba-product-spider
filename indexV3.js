@@ -153,9 +153,9 @@ function getMinPrice(arr) {
 async function findPriceFromPage(page) {
   try {
     const priceSelectorRules = [
+      '.ma-ref-price',
       '.ma-ref-price span',
       '.ma-spec-price span',
-      '.ma-reference-price span',
     ];
     for (let i = 0; i < priceSelectorRules.length; i ++) {
       let selector = priceSelectorRules[i];
