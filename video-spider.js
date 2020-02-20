@@ -22,11 +22,26 @@ const headers = {
 function getArgCurrency() {
   return yargs['currency'] || 'USD';
 }
+const getUserDataDir = () => {
+  if (process.platform === 'win32') {
+    return 'D:\\puppeteer-tmp'
+  } else {
+    return '/var/tmp/puppeteer/session-alibaba'
+  }
+}
+
+function sleep(time = 0) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve();
+    }, time);
+  })
+};
 
 async function initBrowser () {
   console.log('开始初始化 puppeteer');
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     ignoreHTTPSErrors: true,
     ignoreDefaultArgs: ["--enable-automation"],
     args: [
@@ -37,7 +52,9 @@ async function initBrowser () {
       '--no-sandbox',
       '--no-zygote',
       '--single-process',
-      "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
+      '--user-data-dir=' + getUserDataDir()
+      // "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
+      // "--user-data-dir=D:\\puppeteer-tmp"
     ],
     slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
     devtools: false 
@@ -180,49 +197,67 @@ async function setPageCurrency(currency = 'USD') {
 }
 
 // 从详情页中解析信息
-async function parseVideoUrlFromPage(browser, url) {
+async function parseVideoUrlFromPage(url) {
   console.log('打开产品页面: ' + url);
-  let page = await getNewPage(browser);
-  await page.waitFor(1000);
-  await page.goto( url, {
-    waitUntil: 'domcontentloaded',
-    timeout: 0
-  });
-  // 设置价格单位
-    const currency = getArgCurrency();
-    console.log('设置价格单位: ' + currency);
-    await page.setCookie({
-      name: 'sc_g_cfg_f',
-      value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
-      domain: '.alibaba.com'
-    });
-    // 刷新页面
-    await page.waitFor(500);
+  let browser;
+  let page;
+  try {
+    browser = await initBrowser ();
+    page = await getNewPage(browser);
+    await page.waitFor(1000);
     await page.goto( url, {
       waitUntil: 'domcontentloaded',
       timeout: 0
     });
-    // 获取 cookies
-    // const cookies = await page.cookies();
-    // console.log(cookies);
-  // 等待页面元素
-  try {
-    await page.waitForSelector('.bc-video-player', { timeout: 10000 }); 
+    // 设置价格单位
+      const currency = getArgCurrency();
+      console.log('设置价格单位: ' + currency);
+      await page.setCookie({
+        name: 'sc_g_cfg_f',
+        value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
+        domain: '.alibaba.com'
+      });
+      // 刷新页面
+      await page.waitFor(500);
+      await page.goto( url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 0
+      });
+      // 获取 cookies
+      // const cookies = await page.cookies();
+      // console.log(cookies);
+    // 等待页面元素
+    try {
+      await page.waitForSelector('.bc-video-player', { timeout: 10000 }); 
+    } catch (error) {
+      console.log('未找到视频元素');
+      return null;
+    }
+    const videoUrl = await page.$eval('.bc-video-player video', ele => ele.src);
+    console.log('找到视频url: ' + videoUrl);
+    const breadcrumbs = await page.$$eval('.detail-breadcrumb .breadcrumb-item .breadcrumb-link span', function(eles){
+      return eles.map( item => item.innerText ) 
+    }); 
+    let name = breadcrumbs[breadcrumbs.length - 1];
+    name = _.trim(name);
+    // 找产品价格：
+    const price = await findPriceFromPage(page);
+    if (page) {
+      await page.close();
+    }
+    return {videoUrl, name, price};
   } catch (error) {
     console.log('未找到视频元素');
+    console.log(error);
+    if (page) {
+      await page.close();
+      console.log('关闭页面');
+    }
+    if (browser) {
+      await browser.close();
+    }
     return null;
   }
-  const videoUrl = await page.$eval('.bc-video-player video', ele => ele.src);
-  console.log('找到视频url: ' + videoUrl);
-  const breadcrumbs = await page.$$eval('.detail-breadcrumb .breadcrumb-item .breadcrumb-link span', function(eles){
-    return eles.map( item => item.innerText ) 
-  }); 
-  let name = breadcrumbs[breadcrumbs.length - 1];
-  name = _.trim(name);
-  // 找产品价格：
-  const price = await findPriceFromPage(page);
-  await page.close();
-  return {videoUrl, name, price};
 }
 
 async function downloadVideo (url, name) {  
@@ -241,6 +276,19 @@ async function downloadVideo (url, name) {
   return new Promise((resolve, reject) => {
     writer.on('finish', resolve)
     writer.on('error', reject)
+  })
+}
+
+function getVideoSize(link) {
+  return new Promise((resolve, reject) => {
+    fs.stat(link, function(error,stats){
+      if(error){
+        reject("file size error");
+      } else{
+        //文件大小
+        resolve(stats.size);
+      }
+    })
   })
 }
 
@@ -292,7 +340,9 @@ function changeURLArg(url, arg, arg_val) {
 
 // 从列表页中找出指定数量的产品，递归调用
 let allProducts = [];
-async function findProductListFromPage(page, listUrl, num, callback) {
+async function findProductListFromPage(listUrl, num, callback) {
+  let browser = await initBrowser();
+  let page = await getNewPage(browser);
   await page.goto( listUrl, {
     waitUntil: 'domcontentloaded',
     timeout: 0
@@ -364,9 +414,21 @@ async function findProductListFromPage(page, listUrl, num, callback) {
   // console.log(results);
   if(needMore) {
     console.log('产品数量不足，下一页 url:' + nextPageUrl);
-    findProductListFromPage(page, nextPageUrl, moreNum, callback);
+    // if (page) {
+    //   await page.close();
+    // }
+    if (browser) {
+      await browser.close();
+    }
+    await sleep(2000);
+    findProductListFromPage(nextPageUrl, moreNum, callback);
   } else {
-    page.close();
+    // if (page) {
+    //   await page.close();
+    // }
+    if (browser) {
+      await browser.close();
+    }
     callback && callback();
   }
   
@@ -391,7 +453,7 @@ function fancyTimeFormat(time)
     return ret;
 }
 
-async function main(browser, toSpideProducts, startTime) {
+async function main(toSpideProducts, startTime) {
   try {
     await Promise.all([
       makeDir('download'),
@@ -408,12 +470,37 @@ async function main(browser, toSpideProducts, startTime) {
     for (let i=0; i<len; i++) {
       let product = toSpideProducts[i];
       try {
-        let videoInfo = await parseVideoUrlFromPage(browser, product.itemLink);
+        let videoInfo = await parseVideoUrlFromPage(product.itemLink);
         let videoUrl = videoInfo.videoUrl;
         let productName = videoInfo.name;
         let price = videoInfo.price;
         await downloadVideo (videoUrl, product.pid + '_' + productName + '_' + price + '.mp4');
-        dataList.push([product.pid, productName, product.itemLink, videoUrl, price]);
+        let videoSize = 0;
+        try {
+          videoSize = await getVideoSize(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
+        } catch (error) {
+          console.log('获取视频 size 失败');
+        }
+        // 添加 videoUrl 和 videoSize 以过滤
+        let repCheck = _.find(dataList, (item) => {
+          if (item.videoUrl === videoUrl) {
+            return true;
+          } else if (item.price === price && item.videoSize === videoSize) {
+            return true;
+          } else {
+            return false;
+          }
+        })
+        if (!repCheck) {
+          const pArr = [product.pid, productName, product.itemLink, videoUrl, price, videoSize];
+          dataList.push(pArr);
+          console.log('产品详情获取成功');
+          // console.log(pArr);
+        } else {
+          console.log('视频重复，无需抓取');
+          // 删除重复文件
+          fs.unlink(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
+        }
       } catch (error) {
         console.log('error:');
         console.log(error);parseVideoUrlFromPage
@@ -426,14 +513,20 @@ async function main(browser, toSpideProducts, startTime) {
       var using = (end - startTime) / 1000;
       console.log('总用时: ' + fancyTimeFormat(using));
     }
-
-    await exportExcel(dataList, true);
-    await browser.close();
+    const dataResult = _.map(dataList, (item) => {
+      if (item.length === 6) {
+        return _.take(item, 5);
+      } else {
+        return item;
+      }
+    })
+    await exportExcel(dataResult, true);
+    // await browser.close();
     process.exit(0);
   } catch (e) {
     console.log('任务抓取失败!');
     console.log(e.message);
-    await browser.close();
+    // await browser.close();
     // process.exit(0);
   }
 }
@@ -463,10 +556,8 @@ async function run() {
     return;
   }
   console.log(`产品抓取目标数量: ` + num);
-  const browser = await initBrowser ();
-  const page = await getNewPage(browser);
-  findProductListFromPage(page, listUrl, num, function(){
-    main(browser, allProducts, startTime)
+  findProductListFromPage(listUrl, num, function(){
+    main(allProducts, startTime)
   });
 }
 

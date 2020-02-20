@@ -14,6 +14,13 @@ function getArgPath() {
 function getArgCurrency() {
   return yargs['currency'] || 'USD';
 }
+const getUserDataDir = () => {
+  if (process.platform === 'win32') {
+    return 'D:\\puppeteer-tmp'
+  } else {
+    return '/var/tmp/puppeteer/session-alibaba'
+  }
+}
 
 /**
 * 异步延迟
@@ -41,7 +48,9 @@ async function initBrowser () {
       '--no-sandbox',
       '--no-zygote',
       '--single-process',
-      "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
+      '--user-data-dir=' + getUserDataDir()
+      // "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
+      // "--user-data-dir=D:\\puppeteer-tmp"
     ],
     slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
     devtools: false 
@@ -268,7 +277,9 @@ async function parseVideoUrlFromPage(url) {
     name = _.trim(name);
     // 找产品价格：
     const price = await findPriceFromPage(page);
-    await page.close();
+    if (page) {
+      await page.close();
+    }
     await browser.close();
     return {videoUrl, name, price};
   } catch (error) {
@@ -313,6 +324,19 @@ async function downloadVideo (url, name, dirName) {
       console.log(error);
       reject(error.message);
     }
+  })
+}
+
+function getVideoSize(link) {
+  return new Promise((resolve, reject) => {
+    fs.stat(link, function(error,stats){
+      if(error){
+        reject("file size error");
+      } else{
+        //文件大小
+        resolve(stats.size);
+      }
+    })
   })
 }
 
@@ -361,10 +385,31 @@ async function runScript() {
               data.push(info);
               console.log('下载视频失败');
             }
-
-            let info = [ pid, productName, price ];
-            data.push(info);
-            console.log('产品详情获取成功');
+            let videoSize = 0;
+            try {
+              videoSize = await getVideoSize(path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4'));
+            } catch (error) {
+              console.log('获取视频 size 失败');
+            }
+            // 添加 videoUrl 和 videoSize 过滤
+            let repCheck = _.find(data, (item) => {
+              if (item.videoUrl === videoUrl) {
+                return true;
+              } else if (item.price === price && item.videoSize === videoSize) {
+                return true;
+              } else {
+                return false;
+              }
+            })
+            if (!repCheck) {
+              let info = [ pid, productName, price, videoUrl, videoSize ];
+              data.push(info);
+              console.log('产品详情获取成功');
+            } else {
+              console.log('视频重复，无需抓取');
+              // 删除重复文件
+              fs.unlink( path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4') );
+            }
             // console.log(info);
           } else {
             let info = [ pid, 'error', '无产品名' ];
@@ -384,7 +429,14 @@ async function runScript() {
     }
     // 组装并导出结果
     console.log('============= step 3: 导出结果 =============');
-    const outputPath = await exportExcel(data);
+    const dataResult = _.map(data, (item) => {
+      if (item.length === 5) {
+        return _.take(item, 3);
+      } else {
+        return item;
+      }
+    })
+    const outputPath = await exportExcel(dataResult);
     console.log(`============= 产品信息抓取成功！数量 ${data.length} =============`);
     console.log('输出文件位置：');
     console.log(outputPath);
