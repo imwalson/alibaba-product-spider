@@ -462,6 +462,8 @@ async function main(toSpideProducts, startTime) {
     ]);
     // 设置汇率
     // await setPageCurrency('INR');
+    // toSpideProducts 排重
+    toSpideProducts = _.uniq(toSpideProducts);
     await exportExcel(toSpideProducts.map( (item) => { return [item.pid, item.itemLink] }))
     // console.log('待抓取列表');
     // console.log(toSpideProducts);
@@ -474,32 +476,49 @@ async function main(toSpideProducts, startTime) {
         let videoUrl = videoInfo.videoUrl;
         let productName = videoInfo.name;
         let price = videoInfo.price;
-        await downloadVideo (videoUrl, product.pid + '_' + productName + '_' + price + '.mp4');
-        let videoSize = 0;
-        try {
-          videoSize = await getVideoSize(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
-        } catch (error) {
-          console.log('获取视频 size 失败');
-        }
-        // 添加 videoUrl 和 videoSize 以过滤
-        let repCheck = _.find(dataList, (item) => {
-          if (item.videoUrl === videoUrl) {
-            return true;
-          } else if (item.price === price && item.videoSize === videoSize) {
+        // 视频 url 排重
+        let videoExist = _.find(data, (item) => {
+          if (item[3] && item[3] === videoUrl) {
             return true;
           } else {
             return false;
           }
         })
-        if (!repCheck) {
-          const pArr = [product.pid, productName, product.itemLink, videoUrl, price, videoSize];
-          dataList.push(pArr);
-          console.log('产品详情获取成功');
-          // console.log(pArr);
+        if (videoExist) {
+          console.log('视频 url 重复，无需下载');
         } else {
-          console.log('视频重复，无需抓取');
-          // 删除重复文件
-          fs.unlink(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
+          await downloadVideo (videoUrl, product.pid + '_' + productName + '_' + price + '.mp4');
+          let videoSize = 0;
+          try {
+            videoSize = await getVideoSize(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
+          } catch (error) {
+            console.log('获取视频 size 失败');
+          }
+          // 添加 videoUrl 和 videoSize 以过滤
+          let repCheck = _.find(dataList, (item) => {
+            if (item[3] && item[3] === videoUrl) {
+              return true;
+            } else if ( item[4] && item[5] && item[4] === price && item[5] === videoSize) {
+              return true;
+            } else {
+              return false;
+            }
+          })
+          if (!repCheck) {
+            const pArr = [product.pid, productName, product.itemLink, videoUrl, price, videoSize];
+            dataList.push(pArr);
+            console.log('产品详情获取成功');
+            // console.log(pArr);
+          } else {
+            console.log('视频重复，无需抓取');
+            // 删除重复文件
+            fs.unlink(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'), function(err){
+              if(err){
+                console.log(err);
+              }
+              console.log('重复文件删除成功！');
+            })
+          }
         }
       } catch (error) {
         console.log('error:');
@@ -530,17 +549,6 @@ async function main(toSpideProducts, startTime) {
     // process.exit(0);
   }
 }
-
-// TODO: 增加一个方法，导入 csv 抓取详情页视频
-
-// async function test() {
-//   const instance = await initBrowser ();
-//   const page = instance.page;
-//   findProductListFromPage(page, 'https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI', 100, function(){
-//     main(instance, toSpideProducts, num)
-//   });
-// }
-// test();
 
 async function run() {
   var startTime = (new Date()).getTime();

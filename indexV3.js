@@ -355,7 +355,9 @@ async function runScript() {
     let data = [];
     // 解析输入 excel 文件
     console.log('============= step 1: 解析输入文件 =============');
-    const pids = parseExcel(yargPath);
+    let pids = parseExcel(yargPath);
+    // pids 排重
+    pids = _.uniq(pids);
     const urls = _.map(pids, (item) => { return spliceProductUrl(item) });
     console.log(`总共${urls.length}条产品`);
     // await setPageCurrency('INR');
@@ -374,47 +376,65 @@ async function runScript() {
           let price = videoInfo.price;
           productName = _.trim(productName);
           productName = _.replace(productName, '/', 'or');
-          if(productName) {
-            let pathDir = 'download/' + productName;
-            console.log('创建文件夹');
-            await makeDir(pathDir);
-            try {
-              await downloadVideo (videoUrl, pid + '_' + productName + '_' + price + '.mp4', pathDir);
-            } catch (error) {
-              let info = [ pid, 'error', "下载视频失败" ];
-              data.push(info);
-              console.log('下载视频失败');
-            }
-            let videoSize = 0;
-            try {
-              videoSize = await getVideoSize(path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4'));
-            } catch (error) {
-              console.log('获取视频 size 失败');
-            }
-            // 添加 videoUrl 和 videoSize 过滤
-            let repCheck = _.find(data, (item) => {
-              if (item.videoUrl === videoUrl) {
-                return true;
-              } else if (item.price === price && item.videoSize === videoSize) {
-                return true;
-              } else {
-                return false;
-              }
-            })
-            if (!repCheck) {
-              let info = [ pid, productName, price, videoUrl, videoSize ];
-              data.push(info);
-              console.log('产品详情获取成功');
+          // 视频 url 排重
+          let videoExist = _.find(data, (item) => {
+            if (item[3] && item[3] === videoUrl) {
+              return true;
             } else {
-              console.log('视频重复，无需抓取');
-              // 删除重复文件
-              fs.unlink( path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4') );
+              return false;
             }
-            // console.log(info);
+          })
+          if (videoExist) {
+            console.log('视频 url 重复，无需下载');
           } else {
-            let info = [ pid, 'error', '无产品名' ];
-            data.push(info);
-            console.log('无产品名');
+            if(productName) {
+              let pathDir = 'download/' + productName;
+              console.log('创建文件夹');
+              await makeDir(pathDir);
+              try {
+                await downloadVideo (videoUrl, pid + '_' + productName + '_' + price + '.mp4', pathDir);
+                let videoSize = 0;
+                try {
+                  videoSize = await getVideoSize(path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4'));
+                } catch (error) {
+                  console.log('获取视频 size 失败');
+                }
+                // 添加 videoUrl 和 videoSize 过滤
+                let repCheck = _.find(data, (item) => {
+                  if (item[3] && item[3] === videoUrl) {
+                    return true;
+                  } else if ( item[2] && item[4] && item[2] === price && item[4] === videoSize) {
+                    return true;
+                  } else {
+                    return false;
+                  }
+                })
+                if (!repCheck) {
+                  let info = [ pid, productName, price, videoUrl, videoSize ];
+                  data.push(info);
+                  console.log('产品详情获取成功');
+                } else {
+                  console.log('视频重复，无需抓取');
+                  // 删除重复文件
+                  fs.unlink(path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4'), function(err){
+                    if(err){
+                      console.log(err);
+                    }
+                    console.log('重复文件删除成功！');
+                  })
+                }
+              } catch (error) {
+                let info = [ pid, 'error', "下载视频失败" ];
+                data.push(info);
+                console.log('下载视频失败');
+                console.log(error);
+              }
+              // console.log(info);
+            } else {
+              let info = [ pid, 'error', '无产品名' ];
+              data.push(info);
+              console.log('无产品名');
+            }
           }
         } else {
           let info = [ pid, 'error', '未找到视频' ];
