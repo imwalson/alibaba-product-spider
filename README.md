@@ -1,7 +1,6 @@
 # alibaba-product-spider
 scripts for businees team
 
-
 #### 需求一：给定 excel 文档，逐行解析产品信息并导出到新excel
 
 1.存放输入文件到 inputExcels 文件夹，如 input-1.xlsx
@@ -39,3 +38,7 @@ node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-ma
 有些抓取需求直接使用 http 请求库获取源码后解析是拿不到数据的，需要等待页面动态渲染完成才能解析到所需信息。因此本工具主要使用了 `Puppeteer` 。
 
 Puppeteer is a Node library which provides a high-level API to control Chromium or Chrome over the DevTools Protocol.
+
+### 注意事项
+
+目前只兼容 mac 和 linux
