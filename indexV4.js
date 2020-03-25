@@ -10,6 +10,10 @@ const xlsx = require('node-xlsx');
 const makeDir = require('make-dir');
 const url = require('url');
 
+const utils = require('./utils');
+let nextUrl = ''; // 下一页的 url
+let count = 0; // 已经抓取的数量
+
 const itemSelector = `.m-gallery-product-item-v2`;
 const videoMarkSelector = '.seb-img-switcher__icon-video';
 const videoMarkSelector2 = '.watermark.has-video';
@@ -29,14 +33,6 @@ const getUserDataDir = () => {
     return '/var/tmp/puppeteer/session-alibaba'
   }
 }
-
-function sleep(time = 0) {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      resolve();
-    }, time);
-  })
-};
 
 async function initBrowser () {
   console.log('开始初始化 puppeteer');
@@ -150,51 +146,11 @@ async function findPriceFromPage(page) {
     return '';
   } catch(err) {
     console.log('解析价格失败');
+    console.log(err);
     return '';
   }
 }
 
-// 设置价格单位 cookies
-async function setPageCurrency(currency = 'USD') {
-  console.log('设置汇率: ' + currency);
-  let browser;
-  let page;
-  try {
-    browser = await initBrowser ();
-    page = await getNewPage(browser);
-    const url = 'https://www.alibaba.com';
-    await page.waitFor(500);
-    await page.goto( url, {
-      waitUntil: 'domcontentloaded',
-      timeout: 0
-    });
-    await page.waitFor(1000);
-    // 获取 cookies
-    // const cookies = await page.cookies(url);
-    // console.log(cookies);
-    await page.setCookie({
-      name: 'sc_g_cfg_f',
-      value: `sc_b_currency=${currency}&sc_b_locale=en_US&sc_b_site=CN`,
-      domain: '.alibaba.com',
-      path: '/',
-      expires: 3726915447.990282,
-    });
-    console.log('设置汇率完成');
-    await page.close();
-    await browser.close();
-    return currency;
-  } catch (error) {
-    console.log('设置 cookies 失败');
-    if (page) {
-      await page.close();
-      console.log('关闭页面');
-    }
-    if (browser) {
-      await browser.close();
-    }
-    return null;
-  }
-}
 
 // 从详情页中解析信息
 async function parseVideoUrlFromPage(url) {
@@ -279,19 +235,6 @@ async function downloadVideo (url, name) {
   })
 }
 
-function getVideoSize(link) {
-  return new Promise((resolve, reject) => {
-    fs.stat(link, function(error,stats){
-      if(error){
-        reject("file size error");
-      } else{
-        //文件大小
-        resolve(stats.size);
-      }
-    })
-  })
-}
-
 async function exportExcel(data, isVideo) {
   const buffer = xlsx.build([{name: "Sheet1", data: data}]); // Returns a buffer
   const random = Math.floor(Math.random()*10000+0);
@@ -339,11 +282,11 @@ function changeURLArg(url, arg, arg_val) {
 }
 
 // 从列表页中找出指定数量的产品，递归调用
-let allProducts = [];
-async function findProductListFromPage(listUrl, num, callback) {
+
+async function findProductListFromPage() {
   let browser = await initBrowser();
   let page = await getNewPage(browser);
-  await page.goto( listUrl, {
+  await page.goto( nextUrl, {
     waitUntil: 'domcontentloaded',
     timeout: 0
   });
@@ -389,86 +332,39 @@ async function findProductListFromPage(listUrl, num, callback) {
     products.push(obj);
   })
   products = _.filter(products, 'hasVideo');
-  console.log(`本页包含视频的产品实际数量: ` + products.length);
+  // console.log(`本页包含视频的产品实际数量: ` + products.length);
   // console.log(products);
-  var needMore = (num > products.length) ? true : false;
-  var moreNum = needMore && (num - products.length);
-  let toSpide = _.take(products, num);
   // console.log(toSpide);
-  toSpide = _.filter(toSpide,function(p){ return p.pid });
-  // 是否还有下一页
-  let currentPage = url.parse(listUrl, {parseQueryString: true}).query.page || 1;
+  let toSpide = _.filter(products,function(p){ return p.pid });
+  // 下一页 url
+  let currentPage = url.parse(nextUrl, {parseQueryString: true}).query.page || 1;
   currentPage = parseInt(currentPage);
   console.log('currentPage=' + currentPage);
-  let nextEle = $('.ui2-pagination-pages>.next');
+  // let nextEle = $('.ui2-pagination-pages>.next');
   // console.log('下一页dom元素：');
   // console.log(nextEle);
   // let hasNext = nextEle.length ? true : false;
-  let nextPageUrl = changeURLArg(listUrl, 'page', currentPage + 1);
-  allProducts = _.union(allProducts, toSpide);
-  // let results = {
-  //   needMore: needMore,
-  //   moreNum: moreNum,
-  //   nextPageUrl: nextPageUrl
-  // }
-  // console.log(results);
-  if(needMore) {
-    console.log('产品数量不足，下一页 url:' + nextPageUrl);
-    // if (page) {
-    //   await page.close();
-    // }
-    if (browser) {
-      await browser.close();
-    }
-    await sleep(2000);
-    findProductListFromPage(nextPageUrl, moreNum, callback);
-  } else {
-    // if (page) {
-    //   await page.close();
-    // }
-    if (browser) {
-      await browser.close();
-    }
-    callback && callback();
-  }
-  
+  nextUrl = changeURLArg(nextUrl, 'page', currentPage + 1);
+  return toSpide;
 }
 
-function fancyTimeFormat(time)
-{   
-    // Hours, minutes and seconds
-    var hrs = ~~(time / 3600);
-    var mins = ~~((time % 3600) / 60);
-    var secs = ~~time % 60;
-
-    // Output like "1:01" or "4:03:59" or "123:03:59"
-    var ret = "";
-
-    if (hrs > 0) {
-        ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
-    }
-
-    ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-    ret += "" + secs;
-    return ret;
-}
-
-async function main(toSpideProducts, startTime) {
+// 抓取一页的视频，递归调用
+let dataList = [];
+async function main(num) {
   try {
     await Promise.all([
       makeDir('download'),
       makeDir('inputExcels'),
       makeDir('outputExcels'),
     ]);
-    // 设置汇率
-    // await setPageCurrency('INR');
+    // 获取当前页的视频产品列表
+    let toSpideProducts = await findProductListFromPage(); 
     // toSpideProducts 排重
     toSpideProducts = _.uniq(toSpideProducts);
     await exportExcel(toSpideProducts.map( (item) => { return [item.pid, item.itemLink] }))
     // console.log('待抓取列表');
     // console.log(toSpideProducts);
     const len = toSpideProducts.length;
-    let dataList = [];
     for (let i=0; i<len; i++) {
       let product = toSpideProducts[i];
       try {
@@ -490,11 +386,11 @@ async function main(toSpideProducts, startTime) {
           await downloadVideo (videoUrl, product.pid + '_' + productName + '_' + price + '.mp4');
           let videoSize = 0;
           try {
-            videoSize = await getVideoSize(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
+            videoSize = await utils.getVideoSize(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
           } catch (error) {
             console.log('获取视频 size 失败');
           }
-          // 添加 videoUrl 和 videoSize 以过滤
+          // 添加 videoUrl 和 videoSize 以过滤（防止重复）
           let repCheck = _.find(dataList, (item) => {
             if (item[3] && item[3] === videoUrl) {
               return true;
@@ -505,10 +401,38 @@ async function main(toSpideProducts, startTime) {
             }
           })
           if (!repCheck) {
-            const pArr = [product.pid, productName, product.itemLink, videoUrl, price, videoSize];
-            dataList.push(pArr);
-            console.log('产品详情获取成功');
-            // console.log(pArr);
+            // 检查视频文件是否符合要求
+            let effective = await utils.isEffectiveVideo( path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4') );
+            if (effective) {
+              const pArr = [product.pid, productName, product.itemLink, videoUrl, price, videoSize];
+              dataList.push(pArr);
+              // console.log(pArr);
+              count ++; // 计数器加一
+              console.log(`有效视频下载成功`);
+              // 如果数量已经足够，直接结束
+              if (count >= num) {// 数量足够，停止任务
+                console.log('任务抓取成功!');
+                const dataResult = _.map(dataList, (item) => {
+                  if (item.length === 6) {
+                    return _.take(item, 5);
+                  } else {
+                    return item;
+                  }
+                })
+                await exportExcel(dataResult, true);
+                // await browser.close();
+                process.exit(0);
+              }
+            } else {
+              console.log('无用视频');
+              // 删除无用视频
+              fs.unlink(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'), function(err){
+                if(err){
+                  console.log(err);
+                }
+                console.log('无用视频删除成功！');
+              })
+            }
           } else {
             console.log('视频重复，无需抓取');
             // 删除重复文件
@@ -525,23 +449,26 @@ async function main(toSpideProducts, startTime) {
         console.log(error);
         dataList.push([product.pid, product.itemLink, 'error']);
       }
+      console.log(`任务完成度: ${count}/${num}`);
     }
-    console.log('任务抓取成功!');
-    if(startTime) {
-      var end = (new Date()).getTime();
-      var using = (end - startTime) / 1000;
-      console.log('总用时: ' + fancyTimeFormat(using));
+    // 数量不够，递归调用
+    if (count < num) {
+      console.log('继续抓取下一页');
+      main(num);
+    } else {
+      // 数量足够，停止任务
+      console.log('任务抓取成功!');
+      const dataResult = _.map(dataList, (item) => {
+        if (item.length === 6) {
+          return _.take(item, 5);
+        } else {
+          return item;
+        }
+      })
+      await exportExcel(dataResult, true);
+      // await browser.close();
+      process.exit(0);
     }
-    const dataResult = _.map(dataList, (item) => {
-      if (item.length === 6) {
-        return _.take(item, 5);
-      } else {
-        return item;
-      }
-    })
-    await exportExcel(dataResult, true);
-    // await browser.close();
-    process.exit(0);
   } catch (e) {
     console.log('任务抓取失败!');
     console.log(e.message);
@@ -551,7 +478,6 @@ async function main(toSpideProducts, startTime) {
 }
 
 async function run() {
-  var startTime = (new Date()).getTime();
   const listUrl = yargs['listurl'] || '';
   let num = yargs['num'] || 5;
   num = parseInt(num);
@@ -563,10 +489,9 @@ async function run() {
     console.log('num');
     return;
   }
+  nextUrl = listUrl; // 初始页面目标
   console.log(`产品抓取目标数量: ` + num);
-  findProductListFromPage(listUrl, num, function(){
-    main(allProducts, startTime)
-  });
+  main(num);
 }
 
 run();

@@ -1,6 +1,6 @@
 {
   "name": "alibaba-product-spider",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,8 @@
   "dependencies": {
     "axios": "^0.19.0",
     "cheerio": "^1.0.0-rc.3",
+    "ffprobe": "^1.1.0",
+    "ffprobe-static": "^3.0.0",
     "lodash": "^4.17.15",
     "make-dir": "^3.0.0",
     "node-xlsx": "^0.15.0",

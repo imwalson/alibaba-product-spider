@@ -154,7 +154,7 @@ function getMinPrice(arr) {
   arr = _.sortBy(arr, function(item) {
     return parseFloat(item.substr(1).replace(/,/g, ""));
   })
-  console.log(arr);
+  // console.log(arr);
   return arr[0];
 }
 
@@ -302,6 +302,7 @@ async function downloadVideo (url, name, dirName) {
     try {
       const timeout = 1 * 60 * 1000; // 1 分钟超时
       const savePath = path.resolve(__dirname, dirName || 'download', name)
+      console.log(`保存路径: ${savePath}`);
       const writer = fs.createWriteStream(savePath)
       axios({
         url,
