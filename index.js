@@ -5,6 +5,7 @@ const fs = require('fs');
 const axios = require('axios');
 const yargs = require('yargs').argv;
 const makeDir = require('make-dir');
+const cheerio = require('cheerio');
 
 const headers = {
   "user-agen": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3596.0 Safari/537.36',
@@ -87,14 +88,31 @@ async function getProductInfo(url) {
   return new Promise(function(resolve, reject){
     axios.get(url, { headers }).then((resp) => {
       const data = resp.data;
+      // 获取二级类目名
+      let catName = '';
+      const $ = cheerio.load(data);
+      let breadcrumbs = [];
+      $('.breadcrumb-item .breadcrumb-link span').each(function(index,element){
+        // console.log($(element).text());
+        const $element = $(element);
+        breadcrumbs.push(_.trim($element.text()));
+      })
+      // console.log('breadcrumbs');
+      // console.log(breadcrumbs);
+      if(breadcrumbs.length && breadcrumbs.length >= 2) {
+        catName = breadcrumbs[breadcrumbs.length -2];
+      }
+      // 获取其他信息
       const alinkStr = getStrBetween(data, '<li class="breadcrumb-item" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">', '<span itemprop="name">');
+      // console.log(`alinkStr=${alinkStr}`);
       let resText = getStrBetween(alinkStr, 'href="https://www.alibaba.com/', '">');
       let arr = resText.split('_');
+      // console.log(arr);
       if(arr.length > 1) {
         let name = arr[0];
         let id = arr[1];
-        // console.log(`getProductInfo success, id=${id} ,name=${name}`);
-        resolve([ id, name ]);
+        console.log(`getProductInfo success, id=${id} ,name=${name},catName=${catName}`);
+        resolve([ id, name, catName ]);
       } else {
         console.log("getProductInfo error,product info not found");
         reject()
@@ -106,6 +124,7 @@ async function getProductInfo(url) {
 
   })
 }
+// getProductInfo('https://www.alibaba.com/product-detail/Exquisite-Royal-Blue-bone-china-tea_62311097175.html?spm=a2700.galleryofferlist.0.0.6b804fdaRvGs7p&s=p');
 
 async function runScript() {
   try {
