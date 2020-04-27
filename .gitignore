@@ -79,3 +79,5 @@ tmp
 download/
 inputExcels/
 outputExcels/
+logs/
+videos/
