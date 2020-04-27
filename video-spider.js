@@ -233,7 +233,7 @@ async function parseVideoUrlFromPage(url) {
       // log.info(cookies);
     // 等待页面元素
     try {
-      await page.waitForSelector('.bc-video-player', { timeout: 10000 }); 
+      await page.waitForSelector('.bc-video-player', { timeout: 30000 }); 
     } catch (error) {
       log.error('未找到视频元素');
       return null;
