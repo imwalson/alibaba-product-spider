@@ -15,9 +15,8 @@ const jobId = shortid.generate();
 const dbUtils = require('./dbUtils');
 const log = require('./logUtils');
 log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
-
 const utils = require('./utils');
-const timeoutPromise = require('./timeout-promise');
+
 let nextUrl = ''; // 下一页的 url
 let count = 0; // 已经抓取的数量
 
@@ -340,24 +339,12 @@ async function findProductListFromPage() {
     return [];
   }
 }
-// 设置超时时间，超时直接退出脚本
-let findProductListFromPageTimed = timeoutPromise(60000, findProductListFromPage())
 
 // 抓取一页的视频，递归调用
 async function main(num) {
   try {
     // 获取当前页的视频产品列表
-    let toSpideProducts = [];
-    try {
-      toSpideProducts = await findProductListFromPageTimed();
-    } catch (error) {
-      if (error === 'promise timeout') {
-        // 超时后退出脚本
-        log.info('任务处理超时!');
-        await dbUtils.endJobWithError(jobId, 'job timeout!');
-        process.exit(-60);
-      }
-    }
+    let toSpideProducts = await findProductListFromPage();
 
     // toSpideProducts 排重
     toSpideProducts = _.uniq(toSpideProducts);
@@ -372,19 +359,7 @@ async function main(num) {
         // log.info('查询条件:');
         // log.info(JSON.stringify(condition));
         const docExist = await db.products.findOne(condition);
-        let productInfo = {};
-        // 设置超时时间，超时直接退出脚本
-        let parseVideoUrlFromPageTimed = timeoutPromise(60000, parseVideoUrlFromPage(product.itemLink))
-        try {
-          productInfo = await parseVideoUrlFromPageTimed();
-        } catch (error) {
-          if (error === 'promise timeout') {
-            // 超时后退出脚本
-            log.info('任务处理超时!');
-            await dbUtils.endJobWithError(jobId, 'job timeout!');
-            process.exit(-60);
-          }
-        }
+        let productInfo = await parseVideoUrlFromPage(product.itemLink);
         if (docExist) {
           log.info('当前国别商品已抓取，无需重复抓取');
           count ++; // 计数器加一
