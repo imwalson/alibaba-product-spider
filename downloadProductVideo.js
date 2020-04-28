@@ -63,36 +63,50 @@ async function run() {
       let product = docs[i];
       let videoUrl = product.videoUrl;
       try {
-        let videoPath = await downloadVideo (videoUrl);
-        await db.products.update({
-          originalId: product.originalId,
-        },{ 
-          "$set": {
-            updateAt: new Date(),
-            downloaded: true
+        // video 查重
+        const videoExist = await db.productVideos.findOne({ videoUrl });
+        if (videoExist) {
+          log.info('视频已在数据库内保存');
+          await db.products.update({
+            originalId: product.originalId,
+          },{ 
+            "$set": {
+              updateAt: new Date(),
+              downloaded: true
+            }
+          });
+        } else {
+          let videoPath = await downloadVideo (videoUrl);
+          await db.products.update({
+            originalId: product.originalId,
+          },{ 
+            "$set": {
+              updateAt: new Date(),
+              downloaded: true
+            }
+          });
+          // 获取视频信息
+          let videoSize = 0;
+          try {
+            videoSize = await utils.getVideoSize(videoPath);
+          } catch (error) {
+            log.error('获取视频 size 失败');
           }
-        });
-        // 获取视频信息
-        let videoSize = 0;
-        try {
-          videoSize = await utils.getVideoSize(videoPath);
-        } catch (error) {
-          log.error('获取视频 size 失败');
+          let videoObj = {};
+          try {
+            videoObj = await utils.getVideoInfo(videoPath);
+          } catch (error) {
+            log.error('获取视频宽高失败');
+          }
+          const videoInfo = {
+            videoUrl,
+            videoPath,
+            videoSize,
+            videoWidth: videoObj.width || 0,
+            videoHeight: videoObj.height || 0,
+          };
+          await dbUtils.saveProductVideoInfo(videoInfo);
         }
-        let videoObj = {};
-        try {
-          videoObj = await utils.getVideoInfo(videoPath);
-        } catch (error) {
-          log.error('获取视频宽高失败');
-        }
-        const videoInfo = {
-          videoUrl,
-          videoPath,
-          videoSize,
-          videoWidth: videoObj.width || 0,
-          videoHeight: videoObj.height || 0,
-        };
-        await dbUtils.saveProductVideoInfo(videoInfo);
       } catch (e) {
         log.error('下载保存视频失败');
         log.error(e);
