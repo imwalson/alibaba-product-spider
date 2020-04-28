@@ -125,6 +125,40 @@ async function cacheProductInfo(info) {
   }
 }
 
+// 获取 100 个视频未下载的产品
+function getUndownloadProduct() {
+  const docs = await db.products.findAsCursor( {
+    downloaded: false,
+  })
+  .sort({ '_id': 1 })
+  .limit(100)
+  .toArray();
+  return docs;
+}
+
+// 保存产品视频元数据
+async function saveProductVideoInfo(info) {
+  try {
+    const doc = await db.productVideos.findOne({ videoUrl: info.videoUrl });
+    if (doc) {
+      console.log('视频已在数据库内保存');
+    } else {
+      await db.productVideos.insert({
+        ...info,
+        ...{
+          createAt: new Date(),
+          updateAt: new Date(),
+        }
+      });
+    }
+    console.log('保存成功');
+    return info;
+  } catch (error) {
+    console.log('保存错误');
+    throw error;
+  }
+}
+
 
 module.exports = {
   saveJobInfo,
@@ -132,5 +166,7 @@ module.exports = {
   endJobSuccess,
   updateJobListUrl,
   findProductByPid,
-  cacheProductInfo
+  cacheProductInfo,
+  getUndownloadProduct,
+  saveProductVideoInfo,
 };
