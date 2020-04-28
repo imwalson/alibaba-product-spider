@@ -20,7 +20,7 @@ function parseProductInfoFromUrl(href) {
   const pagePath = url.parse(href).pathname;
   const arr = pagePath.split('_');
   res.originalId = arr[1] ? arr[1].replace('.html', '') : '';
-  res.productName = arr[0] || '';
+  res.productName = arr[0] ? arr[0].replace('/product-detail/', '') : '';
   // console.log(res);
   return res;
 }

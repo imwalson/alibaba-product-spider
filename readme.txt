@@ -20,3 +20,12 @@ node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-ma
 1.运行命令：
 node indexV4.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --num=5  --currency='INR'
 2.脚本运行完毕会输出文件，pid 列表在 outputExcels 文件夹中；视频文件在 download 文件夹中
+
+
+
+脚本五： 提供产品列表页 url 和产品数量、国别，抓取包含视频的产品信息到数据库内（不下载视频）
+node listInfoSpider.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --num=5  --currency='INR'
+
+
+脚本六： 下载数据库内未下载的产品视频
+node downloadProductVideo.js
