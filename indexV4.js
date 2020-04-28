@@ -387,13 +387,14 @@ async function main(num) {
             return false;
           }
         })
+        let videoSavePath = path.resolve(__dirname, `download/${jobId}`, product.pid + '_' + productName + '_' + price + '.mp4');
         if (videoExist) {
           log.info('视频 url 重复，无需下载');
         } else {
           await downloadVideo (videoUrl, product.pid + '_' + productName + '_' + price + '.mp4');
           let videoSize = 0;
           try {
-            videoSize = await utils.getVideoSize(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
+            videoSize = await utils.getVideoSize(videoSavePath);
           } catch (error) {
             log.error('获取视频 size 失败');
           }
@@ -409,7 +410,7 @@ async function main(num) {
           })
           if (!repCheck) {
             // 检查视频文件是否符合要求
-            let effective = await utils.isEffectiveVideo( path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4') );
+            let effective = await utils.isEffectiveVideo(videoSavePath);
             if (effective) {
               const pArr = [product.pid, productName, product.itemLink, videoUrl, price, videoSize];
               dataList.push(pArr);
@@ -433,7 +434,7 @@ async function main(num) {
             } else {
               log.info('无用视频');
               // 删除无用视频
-              fs.unlink(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'), function(err){
+              fs.unlink(videoSavePath, function(err){
                 if(err){
                   log.info(err);
                 }
@@ -443,7 +444,7 @@ async function main(num) {
           } else {
             log.info('视频重复，无需抓取');
             // 删除重复文件
-            fs.unlink(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'), function(err){
+            fs.unlink(videoSavePath, function(err){
               if(err){
                 log.info(err);
               }

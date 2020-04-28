@@ -398,6 +398,7 @@ async function runScript() {
               return false;
             }
           })
+          let videoSavePath = path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4');
           if (videoExist) {
             log.info('视频 url 重复，无需下载');
           } else {
@@ -409,7 +410,7 @@ async function runScript() {
                 await downloadVideo (videoUrl, pid + '_' + productName + '_' + price + '.mp4', pathDir);
                 let videoSize = 0;
                 try {
-                  videoSize = await getVideoSize(path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4'));
+                  videoSize = await getVideoSize(videoSavePath);
                 } catch (error) {
                   log.info('获取视频 size 失败');
                 }
@@ -430,7 +431,7 @@ async function runScript() {
                 } else {
                   log.info('视频重复，无需抓取');
                   // 删除重复文件
-                  fs.unlink(path.resolve(__dirname, pathDir, pid + '_' + productName + '_' + price + '.mp4'), function(err){
+                  fs.unlink(videoSavePath, function(err){
                     if(err){
                       log.info(err);
                     }

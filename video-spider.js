@@ -484,6 +484,7 @@ async function main(toSpideProducts, startTime) {
         let videoUrl = videoInfo.videoUrl;
         let productName = videoInfo.name;
         let price = videoInfo.price;
+        let videoSavePath = path.resolve(__dirname, `download/${jobId}`, product.pid + '_' + productName + '_' + price + '.mp4');
         // 视频 url 排重
         let videoExist = _.find(dataList, (item) => {
           if (item[3] && item[3] === videoUrl) {
@@ -498,7 +499,7 @@ async function main(toSpideProducts, startTime) {
           await downloadVideo (videoUrl, product.pid + '_' + productName + '_' + price + '.mp4');
           let videoSize = 0;
           try {
-            videoSize = await getVideoSize(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'));
+            videoSize = await getVideoSize(videoSavePath);
           } catch (error) {
             log.error('获取视频 size 失败');
           }
@@ -520,7 +521,7 @@ async function main(toSpideProducts, startTime) {
           } else {
             log.info('视频重复，无需抓取');
             // 删除重复文件
-            fs.unlink(path.resolve(__dirname, 'download', product.pid + '_' + productName + '_' + price + '.mp4'), function(err){
+            fs.unlink(path.resolve(videoSavePath, function(err){
               if(err){
                 log.error(err);
               }
