@@ -126,7 +126,7 @@ async function cacheProductInfo(info) {
 }
 
 // 获取 100 个视频未下载的产品
-function getUndownloadProduct() {
+async function getUndownloadProduct() {
   const docs = await db.products.findAsCursor( {
     downloaded: false,
   })
