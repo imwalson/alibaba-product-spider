@@ -360,6 +360,7 @@ async function main(num) {
   try {
     await Promise.all([
       makeDir('download'),
+      makeDir(`download/${jobId}`),
       makeDir('inputExcels'),
       makeDir('outputExcels'),
     ]);

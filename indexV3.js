@@ -350,6 +350,7 @@ async function runScript() {
   try {
     await Promise.all([
       makeDir('download'),
+      makeDir(`download/${jobId}`),
       makeDir('inputExcels'),
       makeDir('outputExcels'),
     ]);

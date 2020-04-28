@@ -463,6 +463,7 @@ async function main(toSpideProducts, startTime) {
   try {
     await Promise.all([
       makeDir('download'),
+      makeDir(`download/${jobId}`),
       makeDir('inputExcels'),
       makeDir('outputExcels'),
       makeDir('logs'),
