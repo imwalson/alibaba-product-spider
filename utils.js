@@ -2,6 +2,7 @@ const fs = require('fs');
 const ffprobe = require('ffprobe');
 const ffprobeStatic = require('ffprobe-static');
 const _ = require('lodash');
+var url = require("url");
 
 function sleep(time = 0) {
   return new Promise((resolve, reject) => {
@@ -10,6 +11,19 @@ function sleep(time = 0) {
     }, time);
   })
 };
+
+function parseProductInfoFromUrl(href) {
+  const res = {
+    originalId: '',
+    productName: '',
+  };
+  const pagePath = url.parse(href).pathname;
+  const arr = pagePath.split('_');
+  res.originalId = arr[1] ? arr[1].replace('.html', '') : '';
+  res.productName = arr[0] || '';
+  // console.log(res);
+  return res;
+}
 
 function getVideoSize(link) {
   return new Promise((resolve, reject) => {
@@ -87,3 +101,4 @@ module.exports.sleep = sleep;
 module.exports.getVideoSize = getVideoSize;
 module.exports.getVideoInfo = getVideoInfo;
 module.exports.isEffectiveVideo = isEffectiveVideo;
+module.exports.parseProductInfoFromUrl = parseProductInfoFromUrl;

@@ -503,7 +503,7 @@ async function main(toSpideProducts, startTime) {
           } catch (error) {
             log.error('获取视频 size 失败');
           }
-          // 添加 videoUrl 和 videoSize 以过滤
+          // 添加 videoUrl 和 videoSize 以过滤重复项
           let repCheck = _.find(dataList, (item) => {
             if (item[3] && item[3] === videoUrl) {
               return true;

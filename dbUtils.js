@@ -86,18 +86,43 @@ async function updateJobListUrl(shortId, url) {
   }
 }
 
+// 根据原ID获取数据库数据
+async function findProductByPid(pid) {
+  const doc = await db.products.findOne({ originalId: pid });
+  return doc;
+}
 // 缓存产品信息
-function cacheProductInfo(info) {
-  // 查重
-  // 重复且存在新国别的 price，则保存 price
-  // 不重复，直接新增
-  const prices = {};
-  const doc = {
-    originalId: info.originalId || '',
-    hasVideo: false,
-    prices,
-  };
-  return db.products.insert(doc);
+async function cacheProductInfo(info) {
+  console.log('保存产品信息到数据库');
+  // console.log(info);
+  try {
+    const doc = await db.products.findOne({ originalId: info.originalId });
+    if (doc) {
+      // 更新价格
+      await db.products.update({
+        originalId: info.originalId,
+      },{ 
+        "$set": {
+          ...info,
+          ... { updateAt: new Date() }
+        }
+      });
+    } else {
+      await db.products.insert({
+        ...info,
+        ...{
+          downloaded: false,
+          createAt: new Date(),
+          updateAt: new Date(),
+        }
+      });
+    }
+    console.log('保存成功');
+    return info;
+  } catch (error) {
+    console.log('保存错误');
+    throw error;
+  }
 }
 
 
@@ -106,5 +131,6 @@ module.exports = {
   endJobWithError,
   endJobSuccess,
   updateJobListUrl,
+  findProductByPid,
   cacheProductInfo
 };

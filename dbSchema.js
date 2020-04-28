@@ -22,17 +22,23 @@ var jobSchema = {
 var productSchema = {
   originalId: String, // 原始 ID
   hasVideo: Boolean, // 是否存在视频
-  prices: { // 不同国家单位的价格
-    INR: String,
-    USD: String,
-  },
+  price_INR: String, // 不同国家单位的价格
+  price_USD: String, // 不同国家单位的价格
   productName: String, // 产品名称
   productImage: String, // 产品图片 url
   category1: String, // 一级类目名称
   category2: String, // 二级类目名称
   category3: String, // 三级类目名称
+  category3Id: String, // 三级类目id
   videoUrl: String, // 视频文件 url
   downloaded: Boolean, // 视频是否已下载
+  createAt: Date, // 创建日期
+  updateAt: Date, // 修改日期
+};
+
+// 视频 url 和本地文件对应表
+var productVideoSchema = {
+  videoUrl: String, // 视频文件 url
   videoPath: String, // 视频文件保存路径
   videoSize: Number, // 视频文件大小
   videoWidth: Number, // 视频文件宽
