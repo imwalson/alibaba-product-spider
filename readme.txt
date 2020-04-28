@@ -29,3 +29,7 @@ node listInfoSpider.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid
 
 脚本六： 下载数据库内未下载的产品视频
 node downloadProductVideo.js
+
+
+脚本七： 从已下载视频中找出有效视频，并按规则命名
+node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --currency='INR'

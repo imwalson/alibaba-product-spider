@@ -18,9 +18,9 @@ var jobSchema = {
   currentUrl: String, // 抓取到了哪个列表页 url，方便继续执行
 };
 
-// 用来缓存阿里巴巴产品信息表
+// 阿里巴巴产品信息表
 var productSchema = {
-  jobId: String, // 任务 ID
+  jobId: String, // r ID
   originalId: String, // 原始 ID
   hasVideo: Boolean, // 是否存在视频
   price_INR: String, // 不同国家单位的价格
@@ -37,10 +37,13 @@ var productSchema = {
   updateAt: Date, // 修改日期
 };
 
-// 视频 url 和本地文件对应表
-var productVideoSchema = {
+// 有效视频列表
+var validVideoSchema = {
+  originalId: String, // 视频原 ID
+  currency: String, // 国别
   videoUrl: String, // 视频文件 url
-  videoPath: String, // 视频文件保存路径
+  videoPath: String, // 视频文件原路径
+  newPath: String, // 视频文件复制到的新路径
   videoSize: Number, // 视频文件大小
   videoWidth: Number, // 视频文件宽
   videoHeight: Number, // 视频文件高

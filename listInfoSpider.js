@@ -17,6 +17,7 @@ const log = require('./logUtils');
 log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
 
 const utils = require('./utils');
+const timeoutPromise = require('timeout-promise');
 let nextUrl = ''; // 下一页的 url
 let count = 0; // 已经抓取的数量
 
@@ -40,67 +41,77 @@ function getUserDataDir() {
 
 async function initBrowser () {
   log.info('开始初始化 puppeteer');
-  const browser = await puppeteer.launch({
-    headless: true,
-    ignoreHTTPSErrors: true,
-    ignoreDefaultArgs: ["--enable-automation"],
-    args: [
-      '--disable-gpu',
-      '--disable-dev-shm-usage',
-      '--disable-setuid-sandbox',
-      '--no-first-run',
-      '--no-sandbox',
-      '--no-zygote',
-      '--single-process',
-      '--user-data-dir=' + getUserDataDir()
-      // "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
-      // "--user-data-dir=D:\\puppeteer-tmp"
-    ],
-    slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
-    devtools: false 
-  });
-  log.info('初始化 puppeteer 完成');
-  return browser;
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      ignoreHTTPSErrors: true,
+      ignoreDefaultArgs: ["--enable-automation"],
+      args: [
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--disable-setuid-sandbox',
+        '--no-first-run',
+        '--no-sandbox',
+        '--no-zygote',
+        '--single-process',
+        '--user-data-dir=' + getUserDataDir()
+        // "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
+        // "--user-data-dir=D:\\puppeteer-tmp"
+      ],
+      slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
+      devtools: false 
+    });
+    log.info('初始化 puppeteer 完成');
+    return browser;
+  } catch (error) {
+    log.info('初始化 puppeteer 失败');
+    throw error;
+  }
 }
 
 async function getNewPage(browser) {
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1440, height: 720 });
-  // 自动隐藏弹出框
-  page.on('dialog', async dialog => {
-    await dialog.dismiss();
-  });
-  // 允许权限
-  const context = browser.defaultBrowserContext();
-  context.overridePermissions("https://www.alibaba.com", ["geolocation", "notifications"]);
-  // 开启拦截器
-  await page.setRequestInterception(true);
-  // abort 掉视频、图片请求，节约内存
-  page.on('request', request => {
-    const url = request.url().toLowerCase()
-    const resourceType = request.resourceType()
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1440, height: 720 });
+    // 自动隐藏弹出框
+    page.on('dialog', async dialog => {
+      await dialog.dismiss();
+    });
+    // 允许权限
+    const context = browser.defaultBrowserContext();
+    context.overridePermissions("https://www.alibaba.com", ["geolocation", "notifications"]);
+    // 开启拦截器
+    await page.setRequestInterception(true);
+    // abort 掉视频、图片请求，节约内存
+    page.on('request', request => {
+      const url = request.url().toLowerCase()
+      const resourceType = request.resourceType()
 
-    if (resourceType.toLowerCase() === "image" ||
-      url.endsWith('.jpg') ||
-      url.endsWith('.png') ||
-      url.endsWith('.gif') ||
-      url.endsWith('.jpeg') ||
-      resourceType == 'media' ||
-      url.endsWith('.mp4') ||
-      url.endsWith('.avi') ||
-      url.endsWith('.flv') ||
-      url.endsWith('.mov') ||
-      url.endsWith('.wmv') ||
-      url.indexOf('is.alicdn.com') >= 0) {
+      if (resourceType.toLowerCase() === "image" ||
+        url.endsWith('.jpg') ||
+        url.endsWith('.png') ||
+        url.endsWith('.gif') ||
+        url.endsWith('.jpeg') ||
+        resourceType == 'media' ||
+        url.endsWith('.mp4') ||
+        url.endsWith('.avi') ||
+        url.endsWith('.flv') ||
+        url.endsWith('.mov') ||
+        url.endsWith('.wmv') ||
+        url.indexOf('is.alicdn.com') >= 0) {
 
-      // log.info(`ABORTING: ${resourceType}`)
-      request.abort();
-    }
-    else
-      request.continue();
-  })
-  log.info('初始化 page 完成');
-  return page;
+        // log.info(`ABORTING: ${resourceType}`)
+        request.abort();
+      }
+      else
+        request.continue();
+    })
+    log.info('初始化 page 完成');
+    return page;
+  } catch (error) {
+    log.info('初始化 page 失败');
+    throw error;
+  }
 }
 
 function getMinPrice(arr) {
@@ -238,6 +249,8 @@ async function parseVideoUrlFromPage(url) {
     return null;
   }
 }
+// 设置超时时间，超时直接退出脚本
+let parseVideoUrlFromPageTimed = timeoutPromise(60000, parseVideoUrlFromPage())
 
 function changeURLArg(url, arg, arg_val) {
   var pattern = arg + '=([^&]*)';
@@ -256,7 +269,7 @@ function changeURLArg(url, arg, arg_val) {
   return url + '\n' + arg + '\n' + arg_val;
 }
 
-// 从列表页中找出指定数量的产品，递归调用
+// 从列表页中找出指定数量的产品
 async function findProductListFromPage() {
   await dbUtils.updateJobListUrl(jobId, nextUrl);
   try {
@@ -329,12 +342,25 @@ async function findProductListFromPage() {
     return [];
   }
 }
+// 设置超时时间，超时直接退出脚本
+let findProductListFromPageTimed = timeoutPromise(60000, findProductListFromPage())
 
 // 抓取一页的视频，递归调用
 async function main(num) {
   try {
     // 获取当前页的视频产品列表
-    let toSpideProducts = await findProductListFromPage(); 
+    let toSpideProducts = [];
+    try {
+      toSpideProducts = await findProductListFromPageTimed();
+    } catch (error) {
+      if (error === 'promise timeout') {
+        // 超时后退出脚本
+        log.info('任务处理超时!');
+        await dbUtils.endJobWithError(jobId, 'job timeout!');
+        process.exit(-60);
+      }
+    }
+
     // toSpideProducts 排重
     toSpideProducts = _.uniq(toSpideProducts);
     const len = toSpideProducts.length;
@@ -348,7 +374,17 @@ async function main(num) {
         // log.info('查询条件:');
         // log.info(JSON.stringify(condition));
         const docExist = await db.products.findOne(condition);
-        let productInfo = await parseVideoUrlFromPage(product.itemLink);
+        let productInfo = {};
+        try {
+          productInfo = await parseVideoUrlFromPageTimed(product.itemLink);
+        } catch (error) {
+          if (error === 'promise timeout') {
+            // 超时后退出脚本
+            log.info('任务处理超时!');
+            await dbUtils.endJobWithError(jobId, 'job timeout!');
+            process.exit(-60);
+          }
+        }
         if (docExist) {
           log.info('当前国别商品已抓取，无需重复抓取');
           count ++; // 计数器加一
