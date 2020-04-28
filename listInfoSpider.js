@@ -1,6 +1,6 @@
 /**
  * 抓取品类列表页信息
- * node listInfoSpider.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --num=5
+ * node listInfoSpider.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --num=5  --currency='INR'
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
@@ -256,6 +256,7 @@ function changeURLArg(url, arg, arg_val) {
 
 // 从列表页中找出指定数量的产品，递归调用
 async function findProductListFromPage() {
+  await dbUtils.updateJobListUrl(jobId, nextUrl);
   try {
     let browser = await initBrowser();
     let page = await getNewPage(browser);
