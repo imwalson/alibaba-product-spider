@@ -16,7 +16,10 @@ async function downloadVideo (url) {
   return new Promise((resolve, reject) => {
     try {
       const timeout = 1 * 60 * 1000; // 1 分钟超时
-      const savePath = path.resolve(__dirname, 'videos', name);
+      // 避免一个文件夹下文件过多，根据文件名分路径
+      const str1 = name.substr(0,1);
+      const str2 = name.substr(1,1);
+      const savePath = path.resolve(__dirname, `videos/${str1}/${str2}`, name);
       log.info(`保存路径: ${savePath}`);
       const writer = fs.createWriteStream(savePath);
       axios({
