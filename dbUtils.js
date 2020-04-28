@@ -66,8 +66,28 @@ async function endJobSuccess(shortId, successInfo = {}) {
   }
 }
 
+// 更新任务当前抓取列表
+async function updateJobListUrl(shortId, url) {
+  console.log('更新任务当前抓取列表');
+  const doc = await db.jobs.findOne({ shortId });
+  if (doc) {
+    await db.jobs.update({
+      shortId: shortId,
+    },{ 
+      "$set": {
+        currentUrl: url,
+        updateAt: new Date()
+      }
+    });
+    console.log('更新成功');
+    return true;
+  } else {
+    return null;
+  }
+}
+
 // 缓存产品信息
-function catchProductInfo(info) {
+function cacheProductInfo(info) {
   // 查重
   // 重复且存在新国别的 price，则保存 price
   // 不重复，直接新增
@@ -85,5 +105,6 @@ module.exports = {
   saveJobInfo,
   endJobWithError,
   endJobSuccess,
-  catchProductInfo
+  updateJobListUrl,
+  cacheProductInfo
 };

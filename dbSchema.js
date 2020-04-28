@@ -15,6 +15,7 @@ var jobSchema = {
   errorCount: Number, // 失败次数 （失败超过几次后不再执行，并发邮件提醒）
   errorInfo: String, // 错误信息
   successInfo: Object, // 任务成功后额外信息
+  currentUrl: String, // 抓取到了哪个列表页 url，方便继续执行
 };
 
 // 用来缓存阿里巴巴产品信息表

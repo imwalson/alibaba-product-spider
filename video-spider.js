@@ -346,6 +346,7 @@ function changeURLArg(url, arg, arg_val) {
 // 从列表页中找出指定数量的产品，递归调用
 let allProducts = [];
 async function findProductListFromPage(listUrl, num, callback) {
+  await dbUtils.updateJobListUrl(jobId, listUrl);
   let browser = await initBrowser();
   let page = await getNewPage(browser);
   await page.goto( listUrl, {
