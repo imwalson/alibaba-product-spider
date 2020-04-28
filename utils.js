@@ -57,8 +57,12 @@ async function isEffectiveVideo(filePath) {
       console.log('为横版视频');
       return false;
     }
-    if (videoObj.width < 720 && videoObj.height < 720) {
-      console.log('像素在720dpi以下');
+    // if (videoObj.width < 720 && videoObj.height < 720) {
+    //   console.log('像素在720dpi以下');
+    //   return false;
+    // }
+    if (videoObj.width < 480 && videoObj.height < 480) {
+      console.log('像素在 480dpi 以下');
       return false;
     }
     let videoSize = 0;

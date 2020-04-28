@@ -401,7 +401,7 @@ async function runScript() {
             log.info('视频 url 重复，无需下载');
           } else {
             if(productName) {
-              let pathDir = 'download/' + productName;
+              let pathDir = `download/${jobId}/${productName}`;
               log.info('创建文件夹');
               await makeDir(pathDir);
               try {

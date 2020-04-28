@@ -223,7 +223,7 @@ async function parseVideoUrlFromPage(url) {
 
 async function downloadVideo (url, name) {  
   log.info(`下载视频: ${name}`);
-  const savePath = path.resolve(__dirname, 'download', name)
+  const savePath = path.resolve(__dirname, 'download', jobId, name)
   const writer = fs.createWriteStream(savePath)
 
   const response = await axios({
