@@ -17,7 +17,7 @@ const log = require('./logUtils');
 log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
 
 const utils = require('./utils');
-const timeoutPromise = require('timeout-promise');
+const timeoutPromise = require('./timeout-promise');
 let nextUrl = ''; // 下一页的 url
 let count = 0; // 已经抓取的数量
 
