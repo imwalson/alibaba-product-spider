@@ -79,18 +79,23 @@ async function run() {
         } catch (error) {
           log.error('获取视频 size 失败');
         }
-        const videoObj = await utils.getVideoInfo(videoPath);
+        let videoObj = {};
+        try {
+          videoObj = await utils.getVideoInfo(videoPath);
+        } catch (error) {
+          log.error('获取视频宽高失败');
+        }
         const videoInfo = {
           videoUrl,
           videoPath,
           videoSize,
-          videoWidth: videoObj.width,
-          videoHeight: videoObj.height,
+          videoWidth: videoObj.width || 0,
+          videoHeight: videoObj.height || 0,
         };
         await dbUtils.saveProductVideoInfo(videoInfo);
       } catch (e) {
         log.error('下载保存视频失败');
-        log.error(e.message);
+        log.error(e);
       }
     }
     log.info('任务抓取成功!');
