@@ -249,8 +249,6 @@ async function parseVideoUrlFromPage(url) {
     return null;
   }
 }
-// 设置超时时间，超时直接退出脚本
-let parseVideoUrlFromPageTimed = timeoutPromise(60000, parseVideoUrlFromPage())
 
 function changeURLArg(url, arg, arg_val) {
   var pattern = arg + '=([^&]*)';
@@ -375,8 +373,10 @@ async function main(num) {
         // log.info(JSON.stringify(condition));
         const docExist = await db.products.findOne(condition);
         let productInfo = {};
+        // 设置超时时间，超时直接退出脚本
+        let parseVideoUrlFromPageTimed = timeoutPromise(60000, parseVideoUrlFromPage(product.itemLink))
         try {
-          productInfo = await parseVideoUrlFromPageTimed(product.itemLink);
+          productInfo = await parseVideoUrlFromPageTimed();
         } catch (error) {
           if (error === 'promise timeout') {
             // 超时后退出脚本
