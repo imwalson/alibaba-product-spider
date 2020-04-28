@@ -265,6 +265,7 @@ async function findProductListFromPage() {
       timeout: 0
     });
     await page.waitFor(2000);
+    // TODO: 页面向下滚动获取更多商品
     const data = await page.content();
     const $ = cheerio.load(data);
     let products = [];
@@ -306,7 +307,7 @@ async function findProductListFromPage() {
       products.push(obj);
     })
     products = _.filter(products, 'hasVideo');
-    // log.info(`本页包含视频的产品实际数量: ` + products.length);
+    log.info(`本页包含视频的产品实际数量: ` + products.length);
     // log.info(products);
     // log.info(toSpide);
     let toSpide = _.filter(products,function(p){ return p.pid });
