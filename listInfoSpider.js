@@ -25,6 +25,8 @@ const videoMarkSelector = '.seb-img-switcher__icon-video';
 const videoMarkSelector2 = '.watermark.has-video';
 const itemLinkSelector = 'a.organic-gallery-offer__img-section';
 
+process.setMaxListeners(Infinity); // Fix "MaxListenersExceededWarning"
+
 function getArgCurrency() {
   return yargs['currency'] || 'USD';
 }
@@ -357,7 +359,10 @@ async function main(num) {
           }
         } else {
           log.info('需要新抓取');
-          await dbUtils.cacheProductInfo(productInfo);
+          await dbUtils.cacheProductInfo({
+            ...productInfo,
+            ...{ jobId },
+          });
           // log.info(pArr);
           count ++; // 计数器加一
           // 如果数量已经足够，直接结束

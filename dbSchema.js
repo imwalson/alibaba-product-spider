@@ -20,6 +20,7 @@ var jobSchema = {
 
 // 用来缓存阿里巴巴产品信息表
 var productSchema = {
+  jobId: String, // 任务 ID
   originalId: String, // 原始 ID
   hasVideo: Boolean, // 是否存在视频
   price_INR: String, // 不同国家单位的价格
@@ -45,15 +46,4 @@ var productVideoSchema = {
   videoHeight: Number, // 视频文件高
   createAt: Date, // 创建日期
   updateAt: Date, // 修改日期
-};
-
-// job 对应的产品列表
-var jobProductSchema = {
-  jobId: String, // 任务唯一短ID
-  productId: String, // 原始产品 ID
-  listUrl: String, // 所在列表页 url
-  valid: Boolean, // 视频是否有用
-  videoUrl: String, // 视频文件 url
-  downloaded: Boolean, // 视频是否已下载
-  videoPath: String, // 视频文件保存后的路径
 };

@@ -46,6 +46,11 @@ async function downloadVideo (url) {
 async function run() {
   try {
     const docs = await dbUtils.getUndownloadProduct();
+    if (!docs.length) {
+      log.info('暂无需要抓取的视频');
+      process.exit(0);
+      return null;
+    }
     // 保存任务到 mongodb
     await dbUtils.saveJobInfo({
       shortId: jobId,
