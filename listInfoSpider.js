@@ -42,6 +42,12 @@ async function initBrowser () {
   // 每次初始化 puppeteer 之前查询可用内存，可用内存不足则退出脚本
   const freemem = os.freemem();
   log.info(`当前可用内存： ${freemem}`);
+  // 低于 100M 空闲内存，停止运行
+  if ( freemem < 100 * 1024 * 1024) {
+    log.info('可用内存不足，退出进程');
+    await dbUtils.endJobWithError(jobId, '可用内存不足退出');
+    process.exit(-500);
+  }
   log.info('开始初始化 puppeteer');
   try {
     const browser = await puppeteer.launch({
@@ -420,7 +426,7 @@ async function main(num) {
     }
 
     // 数量不够，递归调用
-    if (count < num) {
+    if (count <= num) {
       log.info('继续抓取下一页');
       await main(num);
     } else {
