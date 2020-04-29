@@ -402,6 +402,7 @@ async function main(num) {
           // 如果数量已经足够，直接结束
           if (count >= num) {// 数量足够，停止任务
             log.info('任务抓取成功!');
+            await dbUtils.endJobSuccess(jobId);
             process.exit(0);
           }
         } else {
@@ -415,6 +416,7 @@ async function main(num) {
           // 如果数量已经足够，直接结束
           if (count >= num) {// 数量足够，停止任务
             log.info('任务抓取成功!');
+            await dbUtils.endJobSuccess(jobId);
             process.exit(0);
           }
         }
