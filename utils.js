@@ -107,9 +107,19 @@ function getDateString() {
   return str;
 }
 
+function parseAlibabaLinkId(href) {
+  const pagePath = url.parse(href).pathname;
+  let arr = pagePath.split('/');
+  arr = _.reverse(arr);
+  const tmpStr = arr[0];
+  const arr2 = tmpStr.split('_');
+  return arr2[1] || '';
+}
+
 module.exports.sleep = sleep;
 module.exports.getVideoSize = getVideoSize;
 module.exports.getVideoInfo = getVideoInfo;
 module.exports.isEffectiveVideo = isEffectiveVideo;
 module.exports.parseProductInfoFromUrl = parseProductInfoFromUrl;
 module.exports.getDateString = getDateString;
+module.exports.parseAlibabaLinkId = parseAlibabaLinkId;

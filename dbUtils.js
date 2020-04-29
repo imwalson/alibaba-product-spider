@@ -40,6 +40,7 @@ async function endJobWithError(shortId, errorInfo) {
     console.log('保存成功');
     return true;
   } else {
+    console.log('未找到指定任务');
     return null;
   }
 }
@@ -62,6 +63,7 @@ async function endJobSuccess(shortId, successInfo = {}) {
     console.log('保存成功');
     return true;
   } else {
+    console.log('未找到指定任务');
     return null;
   }
 }

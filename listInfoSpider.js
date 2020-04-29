@@ -216,9 +216,25 @@ async function parseVideoUrlFromPage(url) {
       result = result.replace(/ /g, '');
       return result;
     })
-    const category3 = breadcrumbs[breadcrumbs.length - 1] || '';
-    const category2 = breadcrumbs[breadcrumbs.length - 2] || '';
-    const category1 = breadcrumbs[breadcrumbs.length - 3] || '';
+    // console.log('breadcrumbs');
+    // console.log(JSON.stringify(breadcrumbs));
+    const category1 = breadcrumbs[2] || '';
+    const category2 = breadcrumbs[3] || '';
+    const category3 = breadcrumbs[4] || '';
+    const category4 = breadcrumbs[5] || '';
+    let breadcrumbLiks = await page.$$eval('.detail-breadcrumb .breadcrumb-item .breadcrumb-link', function(eles){
+      return eles.map( item => item.href ) 
+    });
+    // console.log('breadcrumbLiks');
+    // console.log(JSON.stringify(breadcrumbLiks));
+    const category1Link = breadcrumbLiks[2] || '';
+    const category2Link = breadcrumbLiks[3] || '';
+    const category3Link = breadcrumbLiks[4] || '';
+    const category4Link = breadcrumbLiks[5] || '';
+    const category1Id = category1Link ? utils.parseAlibabaLinkId(category1Link) : '';
+    const category2Id = category2Link ? utils.parseAlibabaLinkId(category2Link) : '';
+    const category3Id = category3Link ? utils.parseAlibabaLinkId(category3Link) : '';
+    const category4Id = category4Link ? utils.parseAlibabaLinkId(category4Link) : '';
     // 找产品价格：
     const price = await findPriceFromPage(page);
     if (page) {
@@ -232,8 +248,18 @@ async function parseVideoUrlFromPage(url) {
       category1,
       category2,
       category3,
+      category4,
+      category1Link,
+      category2Link,
+      category3Link,
+      category4Link,
+      category1Id,
+      category2Id,
+      category3Id,
+      category4Id,
     };
     object[`price_${currency}`] = price;
+    // console.log(object);
     return object;
   } catch (error) {
     log.error('未找到视频元素');
@@ -248,6 +274,7 @@ async function parseVideoUrlFromPage(url) {
     return null;
   }
 }
+// parseVideoUrlFromPage('https://www.alibaba.com/product-detail/Factory-Supply-Portable-Electric-220v-2_62311179022.html?spm=a2700.galleryofferlist.0.0.a18a1ec6rpbb7J&s=p');
 
 function changeURLArg(url, arg, arg_val) {
   var pattern = arg + '=([^&]*)';

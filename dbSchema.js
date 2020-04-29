@@ -45,7 +45,15 @@ var productSchema = {
   category1: String, // 一级类目名称
   category2: String, // 二级类目名称
   category3: String, // 三级类目名称
-  category3Id: String, // 三级类目id
+  category4: String, // 四级类目名称
+  category1Link: String, // 一级类目链接
+  category2Link: String,
+  category3Link: String, 
+  category4Link: String,
+  category1Id: String, // 一级类目 id
+  category2Id: String,
+  category3Id: String, 
+  category4Id: String,
   videoUrl: String, // 视频文件 url
   downloaded: Boolean, // 视频是否已下载
   createAt: Date, // 创建日期
