@@ -41,7 +41,7 @@ function getUserDataDir() {
 async function initBrowser () {
   // 每次初始化 puppeteer 之前查询可用内存，可用内存不足则退出脚本
   const freemem = os.freemem();
-  log.info(`当前可用内存： ${freemem}`);
+  log.info(`当前可用内存： ${freemem / 1024 / 1024} MB`);
   // 低于 100M 空闲内存，停止运行
   if ( freemem < 100 * 1024 * 1024) {
     log.info('可用内存不足，退出进程');
