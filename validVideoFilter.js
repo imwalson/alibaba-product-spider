@@ -112,6 +112,6 @@ async function exportVideos({ currency }) {
   }
 }
 
-exportVideos({
-  currency: 'EGP'
-});
+// exportVideos({
+//   currency: 'EGP'
+// });

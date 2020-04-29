@@ -4,7 +4,7 @@
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
-const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const _ = require('lodash');
 const yargs = require('yargs').argv;
@@ -39,6 +39,9 @@ function getUserDataDir() {
 }
 
 async function initBrowser () {
+  // 每次初始化 puppeteer 之前查询可用内存，可用内存不足则退出脚本
+  const freemem = os.freemem();
+  log.info(`当前可用内存： ${freemem}`);
   log.info('开始初始化 puppeteer');
   try {
     const browser = await puppeteer.launch({
