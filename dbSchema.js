@@ -2,7 +2,21 @@
  * 保存抓取历史的数据库表结构
  */
 
-// 任务信息表
+// 持久化任务
+var sustainedJobSchema = {
+  shortId: String, // 任务短ID
+  type: Number, // 任务类型: 1.抓取列表信息
+  name: String, // 任务名称
+  listUrl: String, // 列表页面
+  num: Number, // 抓取数量
+  currency: String, // 国别
+  finished: Boolean, // 任务是否完成
+  createAt: Date, // 创建时间
+  updateAt: Date, // 最后更新时间
+  currentUrl: String, // 抓取到了哪个列表页 url，方便继续执行
+};
+
+// 单次任务运行信息表
 var jobSchema = {
   shortId: String, // 任务唯一短ID
   name: String, // 任务名称
@@ -16,6 +30,7 @@ var jobSchema = {
   errorInfo: String, // 错误信息
   successInfo: Object, // 任务成功后额外信息
   currentUrl: String, // 抓取到了哪个列表页 url，方便继续执行
+  isContinue: Boolean, // 是否需要继续执行的命令
 };
 
 // 阿里巴巴产品信息表
@@ -36,6 +51,18 @@ var productSchema = {
   createAt: Date, // 创建日期
   updateAt: Date, // 修改日期
 };
+
+// 已保存视频列表
+var productVideoSchema = {
+  videoUrl : String,
+  videoPath : String,
+  videoSize : Number,
+  videoWidth : Number,
+  videoHeight : Number,
+  createAt: Date, // 创建日期
+  updateAt: Date, // 修改日期
+};
+
 
 // 有效视频列表
 var validVideoSchema = {

@@ -97,8 +97,19 @@ async function isEffectiveVideo(filePath) {
   }
 }
 
+function getDateString() {
+  var str,year,month,day,h,m,s;
+  var date = new Date();
+  year = date.getFullYear();
+  month = date.getMonth() + 1;
+  day = date.getDate(); 
+  str = year.toString() + '-' + (month>9?month:'0'+month) + '-' + (day>9?day:'0'+day);
+  return str;
+}
+
 module.exports.sleep = sleep;
 module.exports.getVideoSize = getVideoSize;
 module.exports.getVideoInfo = getVideoInfo;
 module.exports.isEffectiveVideo = isEffectiveVideo;
 module.exports.parseProductInfoFromUrl = parseProductInfoFromUrl;
+module.exports.getDateString = getDateString;

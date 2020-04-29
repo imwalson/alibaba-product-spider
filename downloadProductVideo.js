@@ -10,7 +10,7 @@ log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
 const dbUtils = require('./dbUtils');
 const utils = require('./utils');
 
-async function downloadVideo (url) {  
+async function downloadVideo (url) {
   log.info(`下载视频: ${url}`);
   const name = path.basename(url);
   const str1 = name.substr(0,1);
@@ -41,6 +41,7 @@ async function downloadVideo (url) {
       }).catch((error) => {
         log.error('http requst error');
         reject(error);
+        // TODO: 处理 “视频不存在” 错误
       })
     } catch (error) {
       log.error('downloadVideo failed');
