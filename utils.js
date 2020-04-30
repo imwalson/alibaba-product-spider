@@ -98,12 +98,25 @@ async function isEffectiveVideo(filePath) {
 }
 
 function getDateString() {
-  var str,year,month,day,h,m,s;
+  var str,year,month,day;
   var date = new Date();
   year = date.getFullYear();
   month = date.getMonth() + 1;
   day = date.getDate(); 
   str = year.toString() + '-' + (month>9?month:'0'+month) + '-' + (day>9?day:'0'+day);
+  return str;
+}
+
+function getDateTimeString() {
+  var str,year,month,day,h,m,s;
+  var date = new Date();
+  year = date.getFullYear();
+  month = date.getMonth() + 1;
+  day = date.getDate(); 
+  h = date.getHours();
+  m = date.getMinutes();
+  s = date.getSeconds(); 
+  str = year.toString() + '-' + (month>9?month:'0'+month) + '-' + (day>9?day:'0'+day) +'_' + (h>9?h:'0'+h) + ':' + (m>9?m:'0'+m) + ':' + (s>9?s:'0'+s);
   return str;
 }
 
@@ -122,4 +135,5 @@ module.exports.getVideoInfo = getVideoInfo;
 module.exports.isEffectiveVideo = isEffectiveVideo;
 module.exports.parseProductInfoFromUrl = parseProductInfoFromUrl;
 module.exports.getDateString = getDateString;
+module.exports.getDateTimeString = getDateTimeString;
 module.exports.parseAlibabaLinkId = parseAlibabaLinkId;

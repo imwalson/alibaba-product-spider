@@ -75,8 +75,13 @@ var productVideoSchema = {
 // 有效视频列表
 var validVideoSchema = {
   originalId: String, // 视频原 ID
+  category1: String, // 一级类目名称
+  category2: String, // 二级类目名称
+  category3: String, // 三级类目名称
+  category4: String, // 四级类目名称
   currency: String, // 国别
   videoUrl: String, // 视频文件 url
+  videoName: String, // 视频重命名
   videoPath: String, // 视频文件原路径
   newPath: String, // 视频文件复制到的新路径
   videoSize: Number, // 视频文件大小
