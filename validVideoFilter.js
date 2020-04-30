@@ -355,13 +355,13 @@ async function exportValidVideos(listUrl, currency) {
     await Promise.all([
       makeDir('download'),
       makeDir(`download/${dateString}`),
-      makeDir(`download/${dateString}/${category3}`),
+      makeDir(`download/${dateString}/${categories.category3}`),
     ]);
     const videoDocs = await filtVideoDocs(productDocs);
     for (let i = 0; i < productDocs.length; i ++) {
       let productInfo = productDocs[i];
       let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[price_`${currency}`] + '.mp4';
-      let outputPath = path.resolve(__dirname, `download/${dateString}/${category3}`, videoName);
+      let outputPath = path.resolve(__dirname, `download/${dateString}/${categories.category3}`, videoName);
       // 历史排重
       const saved = await db.validVideos.findOne({ videoName });
       if (saved) {
@@ -374,27 +374,27 @@ async function exportValidVideos(listUrl, currency) {
           console.log('视频未下载');
         } else {
           const inputPath = videoDoc.videoPath;
-          console.log('debug');
-          // await copyVideo(inputPath, outputPath);
-          // console.log('视频拷贝完毕');
-          // // 保存已筛选视频到数据库（方便历史排重）
-          // await db.validVideos.insert({
-          //   originalId: productInfo.originalId, // 视频原 ID
-          //   category1: productInfo.category1,
-          //   category2: productInfo.category2,
-          //   category3: productInfo.category3,
-          //   videoName: videoName,
-          //   currency: currency, // 国别
-          //   videoUrl: videoDoc.videoUrl, // 视频文件 url
-          //   videoPath: inputPath, // 视频文件原路径
-          //   newPath: outputPath, // 视频文件复制到的新路径
-          //   videoSize: videoDoc.videoSize, // 视频文件大小
-          //   videoWidth: videoDoc.videoWidth, // 视频文件宽
-          //   videoHeight: videoDoc.videoHeight, // 视频文件高
-          //   createAt: new Date(),
-          //   updateAt: new Date(),
-          // });
-          // console.log('有效视频保存到数据库完毕');
+          // console.log('debug');
+          await copyVideo(inputPath, outputPath);
+          console.log('视频拷贝完毕');
+          // 保存已筛选视频到数据库（方便历史排重）
+          await db.validVideos.insert({
+            originalId: productInfo.originalId, // 视频原 ID
+            category1: productInfo.category1,
+            category2: productInfo.category2,
+            category3: productInfo.category3,
+            videoName: videoName,
+            currency: currency, // 国别
+            videoUrl: videoDoc.videoUrl, // 视频文件 url
+            videoPath: inputPath, // 视频文件原路径
+            newPath: outputPath, // 视频文件复制到的新路径
+            videoSize: videoDoc.videoSize, // 视频文件大小
+            videoWidth: videoDoc.videoWidth, // 视频文件宽
+            videoHeight: videoDoc.videoHeight, // 视频文件高
+            createAt: new Date(),
+            updateAt: new Date(),
+          });
+          console.log('有效视频保存到数据库完毕');
         }
       }
     }
