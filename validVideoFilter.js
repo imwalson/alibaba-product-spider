@@ -355,13 +355,13 @@ async function exportValidVideos(listUrl, currency) {
     await Promise.all([
       makeDir('download'),
       makeDir(`download/${dateString}`),
-      makeDir(`download/${dateString}/${categories.category3}`),
+      makeDir(`download/${dateString}/${categories.category3}_${currency}`),
     ]);
     const videoDocs = await filtVideoDocs(productDocs);
     for (let i = 0; i < productDocs.length; i ++) {
       let productInfo = productDocs[i];
       let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4';
-      let outputPath = path.resolve(__dirname, `download/${dateString}/${categories.category3}`, videoName);
+      let outputPath = path.resolve(__dirname, `download/${dateString}/${categories.category3}_${currency}`, videoName);
       // 历史排重
       const saved = await db.validVideos.findOne({ videoName });
       if (saved) {
