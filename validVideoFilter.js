@@ -144,7 +144,7 @@ async function findProductListFromPage(listUrl) {
 }
 
 // 从详情页中解析信息
-async function parseVideoUrlFromPage(url) {
+async function parseVideoInfoFromPage(url) {
   console.log('打开产品页面: ' + url);
   let browser;
   let page;
@@ -220,9 +220,11 @@ async function parseVideoUrlFromPage(url) {
 async function getCategoriesByListUrl(listUrl) {
   try {
     const toSpideProducts = await findProductListFromPage(listUrl);
+    // console.log(toSpideProducts);
     if (toSpideProducts.length) {
       const product = toSpideProducts[0];
-      let productInfo = await parseVideoUrlFromPage(product.itemLink);
+      // console.log(product);
+      let productInfo = await parseVideoInfoFromPage(product.itemLink);
       // console.log(productInfo);
       return {
         category1: productInfo.category1,
@@ -341,10 +343,7 @@ async function exportVideos({ currency }) {
 
 
 // 主函数
-async function exportValidVideos({
-  listUrl,
-  currency,
-}) {
+async function exportValidVideos(listUrl, currency) {
   try {
     const categories = await getCategoriesByListUrl(listUrl);
     const productDocs = await findListProducts({
@@ -375,26 +374,27 @@ async function exportValidVideos({
           console.log('视频未下载');
         } else {
           const inputPath = videoDoc.videoPath;
-          await copyVideo(inputPath, outputPath);
-          console.log('视频拷贝完毕');
-          // 保存已筛选视频到数据库（方便历史排重）
-          await db.validVideos.insert({
-            originalId: productInfo.originalId, // 视频原 ID
-            category1: productInfo.category1,
-            category2: productInfo.category2,
-            category3: productInfo.category3,
-            videoName: videoName,
-            currency: currency, // 国别
-            videoUrl: videoDoc.videoUrl, // 视频文件 url
-            videoPath: inputPath, // 视频文件原路径
-            newPath: outputPath, // 视频文件复制到的新路径
-            videoSize: videoDoc.videoSize, // 视频文件大小
-            videoWidth: videoDoc.videoWidth, // 视频文件宽
-            videoHeight: videoDoc.videoHeight, // 视频文件高
-            createAt: new Date(),
-            updateAt: new Date(),
-          });
-          console.log('有效视频保存到数据库完毕');
+          console.log('debug');
+          // await copyVideo(inputPath, outputPath);
+          // console.log('视频拷贝完毕');
+          // // 保存已筛选视频到数据库（方便历史排重）
+          // await db.validVideos.insert({
+          //   originalId: productInfo.originalId, // 视频原 ID
+          //   category1: productInfo.category1,
+          //   category2: productInfo.category2,
+          //   category3: productInfo.category3,
+          //   videoName: videoName,
+          //   currency: currency, // 国别
+          //   videoUrl: videoDoc.videoUrl, // 视频文件 url
+          //   videoPath: inputPath, // 视频文件原路径
+          //   newPath: outputPath, // 视频文件复制到的新路径
+          //   videoSize: videoDoc.videoSize, // 视频文件大小
+          //   videoWidth: videoDoc.videoWidth, // 视频文件宽
+          //   videoHeight: videoDoc.videoHeight, // 视频文件高
+          //   createAt: new Date(),
+          //   updateAt: new Date(),
+          // });
+          // console.log('有效视频保存到数据库完毕');
         }
       }
     }
