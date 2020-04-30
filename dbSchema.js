@@ -8,12 +8,13 @@ var sustainedJobSchema = {
   type: Number, // 任务类型: 1.抓取列表信息
   name: String, // 任务名称
   listUrl: String, // 列表页面
-  num: Number, // 抓取数量
+  num: Number, // 剩余抓取数量
   currency: String, // 国别
-  finished: Boolean, // 任务是否完成
   createAt: Date, // 创建时间
   updateAt: Date, // 最后更新时间
   currentUrl: String, // 抓取到了哪个列表页 url，方便继续执行
+  finished: Boolean, // 任务是否完成
+  status: Number, // 任务状态: 1.已创建未开始 2.运行中 3.运行成功 4.运行失败
 };
 
 // 单次任务运行信息表
