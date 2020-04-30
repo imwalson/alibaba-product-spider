@@ -16,6 +16,7 @@ const shortid = require('shortid');
 const db = require('./db');
 const jobId = shortid.generate();
 let jobShortId = ''; // 持久化任务ID
+let currency = 'USD'; // 国别
 const dbUtils = require('./dbUtils');
 const log = require('./logUtils');
 log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
@@ -47,9 +48,6 @@ process.on("exit",async function(code){
   }
 });
 
-function getArgCurrency() {
-  return yargs['currency'] || 'USD';
-}
 function getUserDataDir() {
   if (process.platform === 'win32') {
     return 'D:\\puppeteer-tmp'
@@ -220,7 +218,6 @@ async function parseVideoUrlFromPage(url) {
       timeout: 0
     });
     // 设置价格单位
-    const currency = getArgCurrency();
     log.info('设置价格单位: ' + currency);
     await page.setCookie({
       name: 'sc_g_cfg_f',
@@ -431,7 +428,7 @@ async function main(num) {
         const { originalId } = utils.parseProductInfoFromUrl(product.itemLink);
         // 数据库查重（根据商品 ID 加 价格单位）
         const condition = { originalId };
-        condition[`price_${getArgCurrency()}`] = { $exists: true };
+        condition[`price_${currency}`] = { $exists: true };
         // log.info('查询条件:');
         // log.info(JSON.stringify(condition));
         const docExist = await db.products.findOne(condition);
@@ -597,12 +594,13 @@ async function run() {
       status: 2
     }
   });
+  currency = jobInfo.currency;
 
   // 保存单次任务到 mongodb
   await dbUtils.saveJobInfo({
     shortId: jobId,
-    name: `持久化任务：抓取列表商品信息。抓取数量${num}，列表页：${listUrl}，国别：${jobInfo.currency}`, // 任务名称
-    command: `node listInfoSpider.js --listurl='${listUrl}' --num=${num}  --currency='${jobInfo.currency}'`, // 任务命令
+    name: `持久化任务：抓取列表商品信息。抓取数量${num}，列表页：${listUrl}，国别：${currency}`, // 任务名称
+    command: `node listInfoSpider.js --listurl='${listUrl}' --num=${num}  --currency='${currency}'`, // 任务命令
     spideNum: num,
   });
   nextUrl = listUrl; // 初始页面目标
