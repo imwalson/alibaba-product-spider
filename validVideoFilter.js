@@ -305,7 +305,7 @@ async function exportVideos({ currency }) {
         const productInfo = await db.products.findOne({ videoUrl: videoDoc.videoUrl });
         if (productInfo) {
           const inputPath = videoDoc.videoPath;
-          const outputPath = path.resolve(__dirname, `download/${dateString}`, productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[price_`${currency}`] + '.mp4');
+          const outputPath = path.resolve(__dirname, `download/${dateString}`, productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4');
           await copyVideo(inputPath, outputPath);
           console.log('视频拷贝完毕');
           // 保存已筛选视频到数据库（方便历史排重）
@@ -360,7 +360,7 @@ async function exportValidVideos(listUrl, currency) {
     const videoDocs = await filtVideoDocs(productDocs);
     for (let i = 0; i < productDocs.length; i ++) {
       let productInfo = productDocs[i];
-      let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[price_`${currency}`] + '.mp4';
+      let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4';
       let outputPath = path.resolve(__dirname, `download/${dateString}/${categories.category3}`, videoName);
       // 历史排重
       const saved = await db.validVideos.findOne({ videoName });
