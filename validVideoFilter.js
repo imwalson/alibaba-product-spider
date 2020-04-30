@@ -265,9 +265,9 @@ async function findListProducts({
 async function filtVideoDocs(products) {
   const videoUrls = _.map(products, "videoUrl");
   const docs = await db.productVideos.findAsCursor({
-    videoWidth: { $gte: 480 },
-    $where : "this.videoHeight >= this.videoWidth",
-    videoSize: { $gte: 2 * 1024 * 1024 },
+    // videoWidth: { $gte: 480 },
+    // $where : "this.videoHeight >= this.videoWidth",
+    // videoSize: { $gte: 2 * 1024 * 1024 },
     videoUrl: { $in: videoUrls }
   })
   .sort({ '_id': 1 })
@@ -372,6 +372,7 @@ async function exportValidVideos(listUrl, currency) {
         const videoDoc = _.find(videoDocs, { videoUrl: productInfo.videoUrl });
         if (!videoDoc) {
           console.log('视频未下载');
+          console.log(productInfo);
         } else {
           const inputPath = videoDoc.videoPath;
           // console.log('debug');
