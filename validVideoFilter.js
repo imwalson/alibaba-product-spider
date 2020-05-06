@@ -409,4 +409,4 @@ async function exportValidVideos(listUrl, currency) {
 }
 
 
-exportValidVideos('https://www.alibaba.com/catalog/razor_cid100001042', 'GBP');
+exportValidVideos('https://www.alibaba.com/catalog/razor_cid100001042', 'TRY');
