@@ -345,6 +345,7 @@ async function findProductListFromPage() {
   try {
     let browser = await initBrowser();
     let page = await getNewPage(browser);
+    log.info(`打开产品列表页: ` + nextUrl);
     await page.goto( nextUrl, {
       waitUntil: 'domcontentloaded',
       timeout: 0
