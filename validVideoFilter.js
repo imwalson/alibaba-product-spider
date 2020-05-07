@@ -1,11 +1,12 @@
 /**
  * 获取有效视频列表
- * node validVideoFilter.js
+ * node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/free-weights_cid205876308' --currency='GBP'
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const _ = require('lodash');
+const yargs = require('yargs').argv;
 const path = require('path');
 const makeDir = require('make-dir');
 const db = require('./db');
@@ -343,7 +344,17 @@ async function exportVideos({ currency }) {
 
 
 // 主函数
-async function exportValidVideos(listUrl, currency) {
+async function exportValidVideos() {
+  const listUrl = yargs['listurl'] || '';
+  const currency = yargs['currency'] || '';
+  if(!listUrl) {
+    log.info('缺少参数： listurl');
+    return;
+  }
+  if(!currency) {
+    log.info('缺少参数： currency');
+    return;
+  }
   try {
     const categories = await getCategoriesByListUrl(listUrl);
     const productDocs = await findListProducts({
@@ -409,4 +420,4 @@ async function exportValidVideos(listUrl, currency) {
 }
 
 
-exportValidVideos('https://www.alibaba.com/catalog/razor_cid100001042', 'INR');
+exportValidVideos();
