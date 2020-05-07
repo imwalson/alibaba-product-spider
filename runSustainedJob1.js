@@ -435,17 +435,17 @@ async function main(num) {
         let productInfo = await parseVideoUrlFromPage(product.itemLink);
         if (docExist) {
           log.info('当前国别商品已抓取，无需重复抓取');
-          count ++; // 计数器加一
-          await db.sustainedJobs.update({
-            shortId: jobShortId,
-          },{ 
-            "$set": {
-              updateAt: new Date(),
-            },
-            "$inc": {
-              num: -1
-            }
-          });
+          // count ++; // 计数器加一
+          // await db.sustainedJobs.update({
+          //   shortId: jobShortId,
+          // },{ 
+          //   "$set": {
+          //     updateAt: new Date(),
+          //   },
+          //   "$inc": {
+          //     num: -1
+          //   }
+          // });
           // 如果数量已经足够，直接结束
           if (count >= num) {// 数量足够，停止任务
             log.info('任务抓取成功!');
