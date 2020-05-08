@@ -11,19 +11,19 @@ const dbUtils = require('./dbUtils');
 const utils = require('./utils');
 
 async function downloadVideo (url) {
+  log.info(`下载视频: ${url}`);
+  if (!url) {
+    throw new Error('视频 url 不能为空');
+  }
+  const name = path.basename(url);
+  const str1 = name.substr(0,1);
+  const str2 = name.substr(1,1);
   await Promise.all([
     makeDir(`videos/${str1}`),
     makeDir(`videos/${str1}/${str2}`),
   ]);
   return new Promise((resolve, reject) => {
     try {
-      log.info(`下载视频: ${url}`);
-      if (!url) {
-        reject('视频 url 不能为空');
-      }
-      const name = path.basename(url);
-      const str1 = name.substr(0,1);
-      const str2 = name.substr(1,1);
       const timeout = 1 * 60 * 1000; // 1 分钟超时
       // 避免一个文件夹下文件过多，根据文件名分路径
       const savePath = path.resolve(__dirname, `videos/${str1}/${str2}`, name);
