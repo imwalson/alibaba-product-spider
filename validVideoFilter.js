@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
- * node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/free-weights_cid205876308' --currency='GBP' --portrait='1'
+ node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/free-weights_cid205876308' --currency='GBP' --portrait='1'
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
@@ -392,8 +392,8 @@ async function exportValidVideos() {
         // 是否存在视频文件
         const videoDoc = _.find(videoDocs, { videoUrl: productInfo.videoUrl });
         if (!videoDoc) {
-          console.log('视频未下载');
-          console.log(productInfo);
+          console.log('视频未下载或不符合条件');
+          // console.log(productInfo);
         } else {
           const inputPath = videoDoc.videoPath;
           // console.log('debug');
