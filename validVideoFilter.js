@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
- * node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/free-weights_cid205876308' --currency='GBP'
+ * node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/free-weights_cid205876308' --currency='GBP' --portrait='1'
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
@@ -264,13 +264,23 @@ async function findListProducts({
 
 // 过滤有效视频
 async function filtVideoDocs(products) {
+  const portrait = yargs['listurl'] || false;
   const videoUrls = _.map(products, "videoUrl");
-  const docs = await db.productVideos.findAsCursor({
+  let option = {
     // videoWidth: { $gte: 480 },
     // $where : "this.videoHeight >= this.videoWidth",
     // videoSize: { $gte: 2 * 1024 * 1024 },
     videoUrl: { $in: videoUrls }
-  })
+  };
+  if (portrait) {
+    option = {
+      ...option,
+      ...{
+        $where : "this.videoHeight >= this.videoWidth",
+      }
+    }
+  }
+  const docs = await db.productVideos.findAsCursor(option)
   .sort({ '_id': 1 })
   .toArray();
   console.log(`有效数量： ${docs.length}`);
