@@ -12,6 +12,9 @@ const utils = require('./utils');
 
 async function downloadVideo (url) {
   log.info(`下载视频: ${url}`);
+  if (!url) {
+    reject('视频 url 不能为空');
+  }
   const name = path.basename(url);
   const str1 = name.substr(0,1);
   const str2 = name.substr(1,1);
