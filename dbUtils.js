@@ -127,13 +127,13 @@ async function cacheProductInfo(info) {
   }
 }
 
-// 获取 500 个视频未下载的产品
+// 获取 1000 个视频未下载的产品
 async function getUndownloadProduct() {
   const docs = await db.products.findAsCursor( {
     downloaded: false,
   })
   .sort({ '_id': 1 })
-  .limit(500)
+  .limit(1000)
   .toArray();
   return docs;
 }

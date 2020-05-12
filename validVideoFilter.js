@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
- node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/free-weights_cid205876308' --currency='GBP' --portrait='1'
+node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/smoking-pipes_cid152606' --currency='EGP' --portrait='1'
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
