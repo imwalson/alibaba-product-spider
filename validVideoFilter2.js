@@ -129,11 +129,11 @@ async function exportValidVideos() {
   const listUrl = yargs['listurl'] || '';
   const currency = yargs['currency'] || '';
   if(!listUrl) {
-    log.info('缺少参数： listurl');
+    console.log('缺少参数： listurl');
     return;
   }
   if(!currency) {
-    log.info('缺少参数： currency');
+    console.log('缺少参数： currency');
     return;
   }
   try {
@@ -142,7 +142,7 @@ async function exportValidVideos() {
       currency,
     })
     if (!productDocs.length) {
-      log.info('products 不存在');
+      console.log('products 不存在');
       process.exit(0);
     }
     await Promise.all([
