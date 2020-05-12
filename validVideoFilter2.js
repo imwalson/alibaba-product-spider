@@ -159,7 +159,7 @@ async function exportValidVideos() {
       let productInfo = productDocs[i];
       await makeDir(`download/${dateString}/${productInfo.category3}_${currency}`);
       let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4';
-      let outputPath = path.resolve(__dirname, `download/${dateString}/${categories.category3}_${currency}`, videoName);
+      let outputPath = path.resolve(__dirname, `download/${dateString}/${productInfo.category3}_${currency}`, videoName);
       // 历史排重
       const saved = await db.validVideos.findOne({ videoName });
       if (saved) {
