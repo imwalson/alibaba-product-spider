@@ -15,11 +15,11 @@ async function findListProducts({
   listUrl,
   currency,
 }) {
-  const jobDocs = db.jobs.findAsCursor( {
+  const options = {
     currentUrl: { '$regex': listUrl, '$options': 'i' },
     command: { '$regex': currency, '$options': 'i' },
-  })
-  .toArray();
+  };
+  const jobDocs = await db.jobs.findAsCursor(options).toArray();
   const jobIds = _.map(jobDocs, "shortId");
   const condition = {
     downloaded: true,
@@ -32,6 +32,11 @@ async function findListProducts({
   console.log(`待导出总数量： ${docs.length}`);
   return docs;
 }
+
+// findListProducts({
+//   listUrl: 'https://www.alibaba.com/catalog/pillow_cid40603',
+//   currency: 'EGP'
+// });
 
 // 过滤有效视频
 async function filtVideoDocs(products) {
