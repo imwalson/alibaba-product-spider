@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/smoking-pipes_cid152606' --currency='EGP' --portrait='1'
+node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/smoking-pipes_cid152606' --currency='EGP' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');
@@ -8,6 +8,7 @@ const yargs = require('yargs').argv;
 const path = require('path');
 const db = require('./db');
 const utils = require('./utils');
+const makeDir = require('make-dir');
 
 async function findListProducts({
   listUrl,
