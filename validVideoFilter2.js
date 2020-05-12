@@ -9,6 +9,7 @@ const path = require('path');
 const db = require('./db');
 const utils = require('./utils');
 const makeDir = require('make-dir');
+const dateString = utils.getDateTimeString();
 
 async function findListProducts({
   listUrl,
