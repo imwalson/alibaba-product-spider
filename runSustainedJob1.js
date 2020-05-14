@@ -62,7 +62,8 @@ async function initBrowser () {
   const freemem = os.freemem();
   log.info(`当前可用内存： ${freemem / 1024 / 1024} MB`);
   // 低于 100M 空闲内存，停止运行
-  const minMem = yargs['minMem'] || 100;
+  let minMem = yargs['minMem'] || '100';
+  minMem = parseInt(minMem);
   if ( freemem < minMem * 1024 * 1024) {
     log.info('可用内存不足，退出进程');
     await dbUtils.endJobWithError(jobId, '可用内存不足退出');
