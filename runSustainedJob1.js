@@ -21,7 +21,7 @@ const dbUtils = require('./dbUtils');
 const log = require('./logUtils');
 log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
 const utils = require('./utils');
-const sortType = 'TRALV';
+// const sortType = 'TRALV';  // 加排序条件之后列表页超过 10 就没数据了
 
 let nextUrl = ''; // 下一页的 url
 let count = 0; // 已经抓取的数量
@@ -213,7 +213,7 @@ async function parseVideoUrlFromPage(url) {
   try {
     browser = await initBrowser();
     page = await getNewPage(browser);
-    await page.waitFor(1000);
+    await page.waitFor(300);
     await page.goto( url, {
       waitUntil: 'domcontentloaded',
       timeout: 0
@@ -226,7 +226,7 @@ async function parseVideoUrlFromPage(url) {
       domain: '.alibaba.com'
     });
     // 刷新页面
-    await page.waitFor(500);
+    await page.waitFor(300);
     await page.goto( url, {
       waitUntil: 'domcontentloaded',
       timeout: 0
@@ -346,12 +346,12 @@ async function findProductListFromPage() {
   try {
     let browser = await initBrowser();
     let page = await getNewPage(browser);
-    log.info(`打开产品列表页: ` + changeURLArg(nextUrl, 'sortType', sortType));
-    await page.goto( changeURLArg(nextUrl, 'sortType', sortType), {
+    log.info(`打开产品列表页: ` + nextUrl);
+    await page.goto( nextUrl, {
       waitUntil: 'domcontentloaded',
       timeout: 0
     });
-    await page.waitFor(2000);
+    await page.waitFor(1000);
     // TODO: 页面向下滚动获取更多商品
     const data = await page.content();
     const $ = cheerio.load(data);
