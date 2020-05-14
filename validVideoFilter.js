@@ -1,5 +1,5 @@
 /**
- * 获取有效视频列表
+ * 获取有效视频列表 （废弃）
 node validVideoFilter.js --listurl='https://www.alibaba.com/catalog/smoking-pipes_cid152606' --currency='EGP' --portrait='1'
  */
 const puppeteer = require('puppeteer');

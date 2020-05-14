@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/weight-lifting_cid2008' --currency='GBP' --portrait='1'
+node testValidCount.js --listurl='https://www.alibaba.com/catalog/earphone-headphone_cid63705' --currency='SAR' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');
@@ -53,6 +53,8 @@ async function filtVideoDocs(products) {
       ...option,
       ...{
         $where : "this.videoHeight >= this.videoWidth",
+        videoWidth: { $gte: 480 },
+        // videoSize: { $gte: 4 * 1024 * 1024 },
       }
     }
   }
@@ -155,48 +157,49 @@ async function exportValidVideos() {
       makeDir(`download/${dateString}`),
     ]);
     const videoDocs = await filtVideoDocs(productDocs);
-    for (let i = 0; i < productDocs.length; i ++) {
-      let productInfo = productDocs[i];
-      await makeDir(`download/${dateString}/${productInfo.category3}_${currency}`);
-      let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4';
-      let outputPath = path.resolve(__dirname, `download/${dateString}/${productInfo.category3}_${currency}`, videoName);
-      // 历史排重
-      const saved = await db.validVideos.findOne({ videoName });
-      if (saved) {
-        console.log('重复视频，无需重复筛选');
-      } else {
-        console.log('找到新视频');
-        // 是否存在视频文件
-        const videoDoc = _.find(videoDocs, { videoUrl: productInfo.videoUrl });
-        if (!videoDoc) {
-          console.log('视频未下载或不符合条件');
-          // console.log(productInfo);
-        } else {
-          const inputPath = videoDoc.videoPath;
-          // console.log('debug');
-          await copyVideo(inputPath, outputPath);
-          console.log('视频拷贝完毕');
-          // 保存已筛选视频到数据库（方便历史排重）
-          await db.validVideos.insert({
-            originalId: productInfo.originalId, // 视频原 ID
-            category1: productInfo.category1,
-            category2: productInfo.category2,
-            category3: productInfo.category3,
-            videoName: videoName,
-            currency: currency, // 国别
-            videoUrl: videoDoc.videoUrl, // 视频文件 url
-            videoPath: inputPath, // 视频文件原路径
-            newPath: outputPath, // 视频文件复制到的新路径
-            videoSize: videoDoc.videoSize, // 视频文件大小
-            videoWidth: videoDoc.videoWidth, // 视频文件宽
-            videoHeight: videoDoc.videoHeight, // 视频文件高
-            createAt: new Date(),
-            updateAt: new Date(),
-          });
-          console.log('有效视频保存到数据库完毕');
-        }
-      }
-    }
+
+    // for (let i = 0; i < productDocs.length; i ++) {
+    //   let productInfo = productDocs[i];
+    //   await makeDir(`download/${dateString}/${productInfo.category3}_${currency}`);
+    //   let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4';
+    //   let outputPath = path.resolve(__dirname, `download/${dateString}/${productInfo.category3}_${currency}`, videoName);
+    //   // 历史排重
+    //   const saved = await db.validVideos.findOne({ videoName });
+    //   if (saved) {
+    //     console.log('重复视频，无需重复筛选');
+    //   } else {
+    //     console.log('找到新视频');
+    //     // 是否存在视频文件
+    //     const videoDoc = _.find(videoDocs, { videoUrl: productInfo.videoUrl });
+    //     if (!videoDoc) {
+    //       console.log('视频未下载或不符合条件');
+    //       // console.log(productInfo);
+    //     } else {
+    //       const inputPath = videoDoc.videoPath;
+    //       // console.log('debug');
+    //       await copyVideo(inputPath, outputPath);
+    //       console.log('视频拷贝完毕');
+    //       // 保存已筛选视频到数据库（方便历史排重）
+    //       await db.validVideos.insert({
+    //         originalId: productInfo.originalId, // 视频原 ID
+    //         category1: productInfo.category1,
+    //         category2: productInfo.category2,
+    //         category3: productInfo.category3,
+    //         videoName: videoName,
+    //         currency: currency, // 国别
+    //         videoUrl: videoDoc.videoUrl, // 视频文件 url
+    //         videoPath: inputPath, // 视频文件原路径
+    //         newPath: outputPath, // 视频文件复制到的新路径
+    //         videoSize: videoDoc.videoSize, // 视频文件大小
+    //         videoWidth: videoDoc.videoWidth, // 视频文件宽
+    //         videoHeight: videoDoc.videoHeight, // 视频文件高
+    //         createAt: new Date(),
+    //         updateAt: new Date(),
+    //       });
+    //       console.log('有效视频保存到数据库完毕');
+    //     }
+    //   }
+    // }
     console.log('视频全部筛选成功!');
     process.exit(0);
   } catch (error) {

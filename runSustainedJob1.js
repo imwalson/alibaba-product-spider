@@ -21,6 +21,7 @@ const dbUtils = require('./dbUtils');
 const log = require('./logUtils');
 log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
 const utils = require('./utils');
+const sortType = 'TRALV';
 
 let nextUrl = ''; // 下一页的 url
 let count = 0; // 已经抓取的数量
@@ -345,8 +346,8 @@ async function findProductListFromPage() {
   try {
     let browser = await initBrowser();
     let page = await getNewPage(browser);
-    log.info(`打开产品列表页: ` + nextUrl);
-    await page.goto( nextUrl, {
+    log.info(`打开产品列表页: ` + changeURLArg(nextUrl, 'sortType', sortType));
+    await page.goto( changeURLArg(nextUrl, 'sortType', sortType), {
       waitUntil: 'domcontentloaded',
       timeout: 0
     });

@@ -1,6 +1,6 @@
 /**
  * 抓取品类列表页信息
- * node listInfoSpider.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --num=5  --currency='INR'
+ node listInfoSpider.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --num=5  --currency='INR'
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
