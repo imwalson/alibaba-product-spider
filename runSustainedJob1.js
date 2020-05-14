@@ -3,7 +3,7 @@
  */
 /**
  * 抓取品类列表页信息 (持久任务,断点续上)
- * node runSustainedJob1.js --jobId='jhI7pWxRJ'
+ * node runSustainedJob1.js --jobId='jhI7pWxRJ' --minMem='100'
  */
 const puppeteer = require('puppeteer');
 const cheerio = require('cheerio');
@@ -62,7 +62,8 @@ async function initBrowser () {
   const freemem = os.freemem();
   log.info(`当前可用内存： ${freemem / 1024 / 1024} MB`);
   // 低于 100M 空闲内存，停止运行
-  if ( freemem < 100 * 1024 * 1024) {
+  const minMem = yargs['minMem'] || 100;
+  if ( freemem < minMem * 1024 * 1024) {
     log.info('可用内存不足，退出进程');
     await dbUtils.endJobWithError(jobId, '可用内存不足退出');
     // 更新持久任务状态
