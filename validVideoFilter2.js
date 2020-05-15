@@ -52,7 +52,7 @@ async function filtVideoDocs(products) {
     option = {
       ...option,
       ...{
-        $where : "this.videoHeight >= this.videoWidth",
+        $where : "this.videoHeight > this.videoWidth",
       }
     }
   }
