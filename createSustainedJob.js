@@ -22,13 +22,13 @@ async function createSustainedJob(options) {
 createSustainedJob({
   shortId: jobId, // 任务短ID
   type: 1, // 任务类型: 1.抓取列表信息
-  name: '抓取 Coffee & Tea Sets 商品信息，国家 TRY', // 任务名称
-  listUrl: 'https://www.alibaba.com/products/coffee_tea_sets/CID100004961.html', // 列表页面
+  name: '抓取 bread makers 商品信息，国家 SAR', // 任务名称
+  listUrl: 'https://www.alibaba.com/catalog/bread-makers_cid64305', // 列表页面
   num: 1000, // 抓取数量
-  currency: 'TRY', // 国别
+  currency: 'SAR', // 国别
   createAt: new Date(), // 创建时间
   updateAt: new Date(), // 最后更新时间
-  currentUrl: 'https://www.alibaba.com/products/coffee_tea_sets/CID100004961.html', // 抓取到了哪个列表页 url，方便继续执行
+  currentUrl: 'https://www.alibaba.com/catalog/bread-makers_cid64305', // 抓取到了哪个列表页 url，方便继续执行
   finished: false, // 任务是否完成
   status: 1, // 任务状态: 1.已创建未开始 2.运行中 3.运行成功 4.运行失败
 })

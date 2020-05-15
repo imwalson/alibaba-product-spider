@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/weight-lifting_cid2008' --currency='GBP' --portrait='1'
+node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/bread-makers_cid64305' --currency='SAR' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');
@@ -40,7 +40,7 @@ async function findListProducts({
 
 // 过滤有效视频
 async function filtVideoDocs(products) {
-  const portrait = yargs['listurl'] || false;
+  const portrait = yargs['portrait'] || false;
   const videoUrls = _.map(products, "videoUrl");
   let option = {
     // videoWidth: { $gte: 480 },
@@ -92,7 +92,7 @@ async function exportVideos({ currency }) {
         const productInfo = await db.products.findOne({ videoUrl: videoDoc.videoUrl });
         if (productInfo) {
           const inputPath = videoDoc.videoPath;
-          const outputPath = path.resolve(__dirname, `download/${dateString}`, productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4');
+          const outputPath = path.resolve(__dirname, `download/${dateString}`, productInfo.originalId + '_' + (productInfo.category4 || productInfo.category3) + '_' + productInfo[`price_${currency}`] + '.mp4');
           await copyVideo(inputPath, outputPath);
           console.log('视频拷贝完毕');
           // 保存已筛选视频到数据库（方便历史排重）
@@ -157,9 +157,9 @@ async function exportValidVideos() {
     const videoDocs = await filtVideoDocs(productDocs);
     for (let i = 0; i < productDocs.length; i ++) {
       let productInfo = productDocs[i];
-      await makeDir(`download/${dateString}/${productInfo.category3}_${currency}`);
-      let videoName = productInfo.originalId + '_' + productInfo.category3 + '_' + productInfo[`price_${currency}`] + '.mp4';
-      let outputPath = path.resolve(__dirname, `download/${dateString}/${productInfo.category3}_${currency}`, videoName);
+      await makeDir(`download/${dateString}/${productInfo.category4 || productInfo.category3}_${currency}`);
+      let videoName = productInfo.originalId + '_' + (productInfo.category4 || productInfo.category3) + '_' + productInfo[`price_${currency}`] + '.mp4';
+      let outputPath = path.resolve(__dirname, `download/${dateString}/${productInfo.category4 || productInfo.category3}_${currency}`, videoName);
       // 历史排重
       const saved = await db.validVideos.findOne({ videoName });
       if (saved) {
@@ -182,6 +182,7 @@ async function exportValidVideos() {
             category1: productInfo.category1,
             category2: productInfo.category2,
             category3: productInfo.category3,
+            category4: productInfo.category4,
             videoName: videoName,
             currency: currency, // 国别
             videoUrl: videoDoc.videoUrl, // 视频文件 url
