@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/bread-makers_cid64305' --currency='SAR' --portrait='1'
+node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/weight-lifting_cid2008' --currency='GBP' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');
@@ -45,7 +45,7 @@ async function filtVideoDocs(products) {
   let option = {
     // videoWidth: { $gte: 480 },
     // $where : "this.videoHeight >= this.videoWidth",
-    // videoSize: { $gte: 2 * 1024 * 1024 },
+    videoSize: { $gte: 3 * 1024 * 1024 },
     videoUrl: { $in: videoUrls }
   };
   if (portrait) {
