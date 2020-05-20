@@ -82,22 +82,25 @@ async function initBrowser () {
   }
   log.info('开始初始化 puppeteer');
   try {
+    const args = [
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--disable-setuid-sandbox',
+      '--no-first-run',
+      '--no-sandbox',
+      '--no-zygote',
+      '--user-data-dir=' + getUserDataDir()
+      // "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
+      // "--user-data-dir=D:\\puppeteer-tmp"
+    ];
+    if (process.platform !== 'win32') {
+      args.push('--single-process');
+    }
     const browser = await puppeteer.launch({
       headless: true,
       ignoreHTTPSErrors: true,
       ignoreDefaultArgs: ["--enable-automation"],
-      args: [
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--disable-setuid-sandbox',
-        '--no-first-run',
-        '--no-sandbox',
-        '--no-zygote',
-        '--single-process',
-        '--user-data-dir=' + getUserDataDir()
-        // "--user-data-dir=/var/tmp/puppeteer/session-alibaba"
-        // "--user-data-dir=D:\\puppeteer-tmp"
-      ],
+      args: args,
       slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
       devtools: false 
     });

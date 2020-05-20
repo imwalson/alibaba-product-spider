@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/weight-lifting_cid2008' --currency='GBP' --portrait='1'
+node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/earphone-headphone_cid63705' --currency='INR' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');
