@@ -20,7 +20,7 @@ scripts for businees team
 1.运行命令：
 
 ```
-node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936?spm=a2700.galleryofferlist.scGlobalHomeHeader.350.fdde4087DsupFI' --num=5  --currency='INR'
+node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-machinery_cid100006936' --num=5  --currency='INR'
 ```
 
 2.脚本运行完毕会输出文件，pid 列表在 outputExcels 文件夹中；视频文件在 download 文件夹中
@@ -42,7 +42,7 @@ node video-spider.js --listurl='https://www.alibaba.com/catalog/food-beverage-ma
 1.运行命令：
 
 ```
-node indexV4.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988?spm=a272h.12677575.channel_image_category.4.ccdc60c6QS3fRu' --num=5  --currency='INR'
+node indexV4.js --listurl='https://www.alibaba.com/catalog/dinnerware_cid100004988' --num=500  --currency='INR'
 ```
 
 2.脚本运行完毕会输出文件，pid 列表在 outputExcels 文件夹中；视频文件在 download 文件夹中

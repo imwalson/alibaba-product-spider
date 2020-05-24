@@ -257,6 +257,7 @@ async function parseVideoUrlFromPage(url) {
       result = result.replace(/-/g, '');
       result = result.replace(/&/g, '');
       result = result.replace(/ /g, '');
+      result = result.replace(/\//g, 'or');
       return result;
     })
     // console.log('breadcrumbs');

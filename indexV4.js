@@ -40,7 +40,7 @@ const getUserDataDir = () => {
 }
 
 async function initBrowser () {
-  log.info('开始初始化 puppeteer');
+  // log.info('开始初始化 puppeteer');
   const browser = await puppeteer.launch({
     headless: true,
     ignoreHTTPSErrors: true,
@@ -60,7 +60,7 @@ async function initBrowser () {
     slowMo: 100, //减速显示，有时会作为模拟人操作特意减速
     devtools: false 
   });
-  log.info('初始化 puppeteer 完成');
+  // log.info('初始化 puppeteer 完成');
   return browser;
 }
 
@@ -100,7 +100,7 @@ async function getNewPage(browser) {
     else
       request.continue();
   })
-  log.info('初始化 page 完成');
+  // log.info('初始化 page 完成');
   return page;
 }
 
@@ -165,7 +165,7 @@ async function parseVideoUrlFromPage(url) {
   try {
     browser = await initBrowser ();
     page = await getNewPage(browser);
-    await page.waitFor(1000);
+    await page.waitFor(300);
     await page.goto( url, {
       waitUntil: 'domcontentloaded',
       timeout: 0

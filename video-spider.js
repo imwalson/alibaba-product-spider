@@ -521,7 +521,7 @@ async function main(toSpideProducts, startTime) {
           } else {
             log.info('视频重复，无需抓取');
             // 删除重复文件
-            fs.unlink(path.resolve(videoSavePath, function(err){
+            fs.unlink(path.resolve(videoSavePath), function(err){
               if(err){
                 log.error(err);
               }

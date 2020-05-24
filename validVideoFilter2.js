@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/earphone-headphone_cid63705' --currency='INR' --portrait='1'
+node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/power-drills_cid205789302' --currency='EGP' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');
@@ -157,9 +157,11 @@ async function exportValidVideos() {
     const videoDocs = await filtVideoDocs(productDocs);
     for (let i = 0; i < productDocs.length; i ++) {
       let productInfo = productDocs[i];
-      await makeDir(`download/${dateString}/${productInfo.category4 || productInfo.category3}_${currency}`);
-      let videoName = productInfo.originalId + '_' + (productInfo.category4 || productInfo.category3) + '_' + productInfo[`price_${currency}`] + '.mp4';
-      let outputPath = path.resolve(__dirname, `download/${dateString}/${productInfo.category4 || productInfo.category3}_${currency}`, videoName);
+      let categoryStr = productInfo.category4 || productInfo.category3;
+      categoryStr = categoryStr.replace(/\//g, ' or ');
+      await makeDir(`download/${dateString}/${categoryStr}_${currency}`);
+      let videoName = productInfo.originalId + '_' + (categoryStr) + '_' + productInfo[`price_${currency}`] + '.mp4';
+      let outputPath = path.resolve(__dirname, `download/${dateString}/${categoryStr}_${currency}`, videoName);
       // 历史排重
       const saved = await db.validVideos.findOne({ videoName });
       if (saved) {
