@@ -14,7 +14,7 @@ app.get('/', function(req, res){
 
 app.get('/api/category_by_pid/:pid', async function(req, res){
   const pid = req.params.pid || '';
-  // console.log(pid);
+  console.log(pid);
   try {
     const doc = await db.products.findOne({ originalId: pid + '' });
     if (doc) {
