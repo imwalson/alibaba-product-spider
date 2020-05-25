@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>按照 pid 查询品类数据</title>
+  <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+  <script src="https://cdn.bootcss.com/element-ui/2.12.0/index.js"></script>
+  <link rel="stylesheet" href="https://cdn.bootcss.com/element-ui/2.12.0/theme-chalk/index.css">
+  <style>
+    #vuecnt {
+      min-width: 1200px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    .search-form {
+      width: 1200px;
+      margin: 20px auto;
+    }
+    .segment.el-input {
+      width: 400px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="vuecnt" v-cloak>
+    <div class="search-form">
+      <el-form :inline="true" class="search-form-inline">
+        <el-form-item label="商品 ID:">
+          <el-input v-model="searchForm.pid" placeholder="商品 id" class="segment"></el-input>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="onSearch">查询</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <el-table
+      :data="tableData"
+      style="width: 1200px"
+      border>
+      <el-table-column
+        prop="originalId"
+        label="商品ID"
+        width="200">
+      </el-table-column>
+      <el-table-column
+        prop="category1"
+        label="一级类目">
+      </el-table-column>
+      <el-table-column
+        prop="category2"
+        label="二级类目">
+      </el-table-column>
+      <el-table-column
+        prop="category3"
+        label="三级类目">
+      </el-table-column>
+      <el-table-column
+        prop="category4"
+        label="四级类目">
+      </el-table-column>
+      <el-table-column
+        label="商品链接"
+      >
+        <template slot-scope="scope">
+          <a :href="scope.row.url" target="_blank">{{ scope.row.productName }}</a>
+        </template>
+      </el-table-column>
+    </el-table>
+ 
+  </div>
+</body>
+<script src="https://cdn.bootcss.com/axios/0.18.1/axios.min.js"></script>
+<script src="/static/lib/utils.js"></script>
+<script crossorigin="anonymous" integrity="sha384-2HWZ0KJxkQ3nhRpHPzk4AO2iIy1S8rSGwN5MpMS/xf34mqOahLqEbqwvdk48EnEv" src="http://lib.baomitu.com/lodash.js/4.17.11/lodash.min.js"></script>
+<script>
+  var vueApp;
+
+  // 初始化vue对象
+  vueApp = new Vue({
+    el: '#vuecnt',
+    data: {
+      loading: false,
+      searchForm: {
+        pid: '',
+      },
+      tableData: [],
+    },
+    mounted: function () {
+      this.initForm();
+      
+    },
+    methods: {
+      initForm() {
+        var pid = getQueryString('pid') || '';
+        this.searchForm = {
+          pid: pid,
+        };
+        this.getList();
+      },
+      onSearch() {
+        //console.log(this.searchForm);
+        var url = location.href;
+        url = changeURLArg(url, 'pid', this.searchForm.pid);
+        location.assign(url);
+      },
+      getList() {
+        var _this = this;
+        if (!this.searchForm.pid){
+          // _this.$message.error( "pid 不能为空" );
+          return;
+        }
+        this.loading = true;
+        axios.get('/api/category_by_pid/' + this.searchForm.pid)
+        .then(function(res) {
+          var json = res.data;
+          _this.loading = false;
+          if(json.success){
+            _this.tableData = [
+              { ...json.data, ...{ url: `https://www.alibaba.com/product-detail/_${_this.searchForm.pid}.html?bypass=true` } }
+            ];
+          }else{
+            _this.$message.error( json.error );
+            _this.tableData = [
+              { originalId: _this.searchForm.pid, url: `https://www.alibaba.com/product-detail/_${_this.searchForm.pid}.html?bypass=true` }
+            ];
+          }
+        })
+        .catch(function(err){
+          _this.loading = false;
+          _this.$message.error( '数据请求失败');
+          console.log(err);
+        })
+      },
+
+    }
+  });
+</script>
+
+</html>
