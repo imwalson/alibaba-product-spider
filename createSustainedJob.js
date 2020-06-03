@@ -22,13 +22,13 @@ async function createSustainedJob(options) {
 createSustainedJob({
   shortId: jobId, // 任务短ID
   type: 1, // 任务类型: 1.抓取列表信息
-  name: '抓取 Game Player Accessories 商品信息，国家 INR', // 任务名称
-  listUrl: 'https://www.alibaba.com/catalog/game-player-accessories_cid180603', // 列表页面
+  name: '抓取 Outdoor Lighting 商品信息，国家 SAR', // 任务名称
+  listUrl: 'https://www.alibaba.com/catalog/outdoor-lighting_cid100009165', // 列表页面
   num: 1000, // 抓取数量
-  currency: 'INR', // 国别
+  currency: 'SAR', // 国别
   createAt: new Date(), // 创建时间
   updateAt: new Date(), // 最后更新时间
-  currentUrl: 'https://www.alibaba.com/catalog/game-player-accessories_cid180603', // 抓取到了哪个列表页 url，方便继续执行
+  currentUrl: 'https://www.alibaba.com/catalog/outdoor-lighting_cid100009165', // 抓取到了哪个列表页 url，方便继续执行
   finished: false, // 任务是否完成
   status: 1, // 任务状态: 1.已创建未开始 2.运行中 3.运行成功 4.运行失败
 })

@@ -129,6 +129,30 @@ function parseAlibabaLinkId(href) {
   return arr2[1] || '';
 }
 
+// 旧版视频命名规则
+function videoNamingRuleV1(productInfo) {
+  if (!productInfo.category4 && !productInfo.category3) {
+    return `cateLpProd__NONE__NONE__*__${productInfo.originalId}__roi`;
+  }
+  let categoryStr = productInfo.category4 || productInfo.category3;
+  categoryStr = categoryStr.replace(/\//g, ' or ');
+  const name = productInfo.originalId + '_' + (categoryStr) + '_' + productInfo[`price_${currency}`] + '.mp4'
+  return name;
+}
+
+// 新版视频命名规则
+// "cateLpProd__", 四级或三级类目ID（最后一级，id 以 url 显示为准）,"__",三级类目名称,"__*__",商品PID,"__roi"
+function videoNamingRuleV2(productInfo) {
+  if (!productInfo.category4 && !productInfo.category3 && !productInfo.category2) {
+    return `cateLpProd__NONE__NONE__*__${productInfo.originalId}__roi.mp4`;
+  }
+  let lastCatId = productInfo.category4Id || productInfo.category3Id;
+  lastCatId = lastCatId.toLocaleLowerCase().replace('pid', '').replace('cid', '');
+  const lastCatName = productInfo.category4 || productInfo.category3;
+  const name = `cateLpProd__${lastCatId}__${lastCatName}__*__${productInfo.originalId}__roi.mp4`;
+  return name;
+}
+
 module.exports.sleep = sleep;
 module.exports.getVideoSize = getVideoSize;
 module.exports.getVideoInfo = getVideoInfo;
@@ -137,3 +161,5 @@ module.exports.parseProductInfoFromUrl = parseProductInfoFromUrl;
 module.exports.getDateString = getDateString;
 module.exports.getDateTimeString = getDateTimeString;
 module.exports.parseAlibabaLinkId = parseAlibabaLinkId;
+module.exports.videoNamingRuleV1 = videoNamingRuleV1;
+module.exports.videoNamingRuleV2 = videoNamingRuleV2;

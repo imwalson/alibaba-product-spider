@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/power-drills_cid205789302' --currency='EGP' --portrait='1'
+node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/sunglasses_cid33902' --currency='SAR' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');
@@ -160,7 +160,9 @@ async function exportValidVideos() {
       let categoryStr = productInfo.category4 || productInfo.category3;
       categoryStr = categoryStr.replace(/\//g, ' or ');
       await makeDir(`download/${dateString}/${categoryStr}_${currency}`);
-      let videoName = productInfo.originalId + '_' + (categoryStr) + '_' + productInfo[`price_${currency}`] + '.mp4';
+      // let videoName = productInfo.originalId + '_' + (categoryStr) + '_' + productInfo[`price_${currency}`] + '.mp4';
+      // let videoName = utils.videoNamingRuleV1(productInfo);
+      let videoName = utils.videoNamingRuleV2(productInfo);
       let outputPath = path.resolve(__dirname, `download/${dateString}/${categoryStr}_${currency}`, videoName);
       // 历史排重
       const saved = await db.validVideos.findOne({ videoName });
