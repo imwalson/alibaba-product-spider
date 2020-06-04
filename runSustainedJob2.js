@@ -16,6 +16,7 @@ const dbUtils = require('./dbUtils');
 const log = require('./logUtils');
 log.setSavePath(path.resolve(__dirname, 'logs', jobId + '.log'));
 const utils = require('./utils');
+const makeDir = require('make-dir');
 
 const count_per_job = 2000;
 
