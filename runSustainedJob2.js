@@ -159,6 +159,13 @@ async function run() {
     let docExist = await db.products.findOne(condition);
     if (docExist) {
       log.info('当前国别商品已抓取，无需重复抓取');
+      await db.high_quality_products.update({
+        product_id: product.product_id,
+      },{ 
+        "$set": {
+          downloaded: true
+        }
+      });
     } else {
       log.info('需要新抓取');
       await dbUtils.cacheProductInfo({
