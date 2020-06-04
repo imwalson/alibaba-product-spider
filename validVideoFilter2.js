@@ -1,6 +1,6 @@
 /**
  * 获取有效视频列表
-node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/sunglasses_cid33902' --currency='SAR' --portrait='1'
+node validVideoFilter2.js --listurl='https://www.alibaba.com/catalog/men-s-trousers-pants_cid100003085' --currency='SAR' --portrait='1'
  */
 const fs = require('fs');
 const _ = require('lodash');

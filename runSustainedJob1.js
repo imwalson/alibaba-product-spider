@@ -564,7 +564,7 @@ async function run() {
     log.info('缺少参数： jobShortId');
     return;
   }
-  const jobInfo = await db.sustainedJobs.findOne({ shortId: jobShortId });
+  const jobInfo = await db.sustainedJobs.findOne({ shortId: jobShortId, type: 1 });
   if (!jobInfo) {
     log.info('未找到持久化任务 ID： ' + jobShortId);
     process.exit(-100);

@@ -3,9 +3,11 @@
  */
 /**
  * 抓取品类列表页信息 (持久任务,断点续上)
- * node runSustainedJob2.js --jobId='jhI7pWxRJ'
+ * node runSustainedJob2.js --jobId='gYCK2FLa_'
  */
+const axios = require('axios');
 const path = require('path');
+const fs = require('fs');
 const _ = require('lodash');
 const yargs = require('yargs').argv;
 const db = require('./db');
@@ -35,8 +37,63 @@ process.on("exit",async function(code){
   }
 });
 
-async function getJobProducts() {
+async function downloadVideo (url) {
+  log.info(`下载视频: ${url}`);
+  if (!url) {
+    throw new Error('视频 url 不能为空');
+  }
+  const name = path.basename(url);
+  const str1 = name.substr(0,1);
+  const str2 = name.substr(1,1);
+  await Promise.all([
+    makeDir(`videos/${str1}`),
+    makeDir(`videos/${str1}/${str2}`),
+  ]);
+  return new Promise((resolve, reject) => {
+    try {
+      const timeout = 1 * 60 * 1000; // 1 分钟超时
+      // 避免一个文件夹下文件过多，根据文件名分路径
+      const savePath = path.resolve(__dirname, `videos/${str1}/${str2}`, name);
+      log.info(`保存路径: ${savePath}`);
+      const writer = fs.createWriteStream(savePath);
+      axios({
+        url,
+        method: 'GET',
+        responseType: 'stream'
+      }).then((response) => {
+        response.data.pipe(writer);
+        writer.on('finish', () => { resolve(savePath) });
+        writer.on('error', reject);
+        // 超时时间
+        setTimeout(() => {
+          reject();
+        }, timeout);
+      }).catch((error) => {
+        log.error('http requst error');
+        reject(error);
+        // TODO: 处理 “视频不存在” 错误
+      })
+    } catch (error) {
+      log.error('downloadVideo failed');
+      log.error(error);
+      reject(error);
+    }
+  })
+}
 
+// 获取
+async function getJobProducts(jobInfo) {
+  const option = {
+    downloaded: { $exists: false },
+  };
+  if (jobInfo.catLevel) {
+    option[jobInfo.catLevel] = jobInfo.catId;
+  }
+  const docs = await db.high_quality_products.findAsCursor(option)
+    .sort({ '_id': 1 })
+    .limit(count_per_job)
+    .toArray();
+  return docs;
 }
 
 
@@ -65,6 +122,22 @@ async function run() {
     log.info('任务已成功，无需重复执行');
     process.exit(-100);
   }
+  // 开始下载
+  const products = await getJobProducts(jobInfo);
+  console.log(products.length);
+  if (!products.length) {
+    log.info('无剩余任务');
+    await db.sustainedJobs.update({
+      shortId: jobId,
+    },{ 
+      "$set": {
+        updateAt: new Date(),
+        finished: true,
+        status: 3
+      }
+    });
+    process.exit(-100);
+  }
   // 更新持久任务状态
   console.log('持久任务更改状态为进行中');
   await db.sustainedJobs.update({
@@ -75,17 +148,116 @@ async function run() {
       status: 2
     }
   });
-  currency = jobInfo.currency;
+  // 开始下载视频
+  const len = products.length;
+  for (let i=0; i<len; i++) {
+    let product = products[i];
+    // 数据库查重（根据商品 ID 加 价格单位）
+    const condition = { originalId: product.product_id };
+    const docExist = await db.products.findOne(condition);
+    if (docExist) {
+      log.info('当前国别商品已抓取，无需重复抓取');
+    } else {
+      log.info('需要新抓取');
+      await dbUtils.cacheProductInfo({
+        "originalId" : product.product_id,
+        "productName" : product.prod_name,
+        "hasVideo" : true,
+        "videoUrl" : product.video_url,
+        "category1" : product.cate_lv1_desc || '',
+        "category2" : product.cate_lv2_desc || '',
+        "category3" : product.cate_lv3_desc || '',
+        "category4" : "",
+        "downloaded" : false,
+        "createAt" : new Date(),
+        "updateAt" : new Date(),
+        "jobId" : jobId,
+        "category1Id" : product.cate_lv1_id || '',
+        "category2Id" : product.cate_lv2_id || '',
+        "category3Id" : product.cate_lv3_id || '',
+      });
+      // 下载视频
+      let videoUrl = product.video_url;
+      try {
+        // video 查重
+        const videoExist = await db.productVideos.findOne({ videoUrl });
+        if (videoExist) {
+          log.info('视频已在数据库内保存');
+          await db.products.update({
+            originalId: product.product_id,
+          },{ 
+            "$set": {
+              updateAt: new Date(),
+              downloaded: true
+            }
+          });
+          await db.high_quality_products.update({
+            product_id: product.product_id,
+          },{ 
+            "$set": {
+              downloaded: true
+            }
+          });
+        } else {
+          let videoPath = await downloadVideo (videoUrl);
+          await db.products.update({
+            originalId: product.product_id,
+          },{ 
+            "$set": {
+              videoPath,
+              updateAt: new Date(),
+              downloaded: true,
+            }
+          });
+          await db.high_quality_products.update({
+            product_id: product.product_id,
+          },{ 
+            "$set": {
+              downloaded: true
+            }
+          });
+          // 获取视频信息
+          let videoSize = 0;
+          try {
+            videoSize = await utils.getVideoSize(videoPath);
+          } catch (error) {
+            log.error('获取视频 size 失败');
+          }
+          let videoObj = {};
+          try {
+            videoObj = await utils.getVideoInfo(videoPath);
+          } catch (error) {
+            log.error('获取视频宽高失败');
+          }
+          const videoInfo = {
+            videoUrl,
+            videoPath,
+            videoSize,
+            videoWidth: videoObj.width || 0,
+            videoHeight: videoObj.height || 0,
+          };
+          await dbUtils.saveProductVideoInfo(videoInfo);
+        }
+      } catch (e) {
+        log.error('下载保存视频失败');
+        log.error(e);
+      }
+      log.info(`产品ID ${product.product_id} 的视频保存成功!`);
+    }
+    await db.sustainedJobs.update({
+      shortId: jobId,
+    },{ 
+      "$set": {
+        updateAt: new Date(),
+        status: 4
+      }
+    });
+    
+    log.info('此批次任务抓取成功!');
+    process.exit(0);
+  }
 
-  // 保存单次任务到 mongodb
-  await dbUtils.saveJobInfo({
-    shortId: jobId,
-    name: `持久化任务：抓取列表商品信息。抓取数量${num}，列表页：${listUrl}，国别：${currency}`, // 任务名称
-    command: `node listInfoSpider.js --listurl='${listUrl}' --num=${num}  --currency='${currency}'`, // 任务命令
-    spideNum: num,
-  });
-  log.info(`产品抓取目标数量: ` + num);
-  
+  log.info(`产品抓取目标数量: ` + jobInfo.num);
 }
 
 run();
