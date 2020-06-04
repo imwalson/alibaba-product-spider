@@ -151,11 +151,12 @@ async function run() {
   });
   // 开始下载视频
   const len = products.length;
+  log.info(`本次抓取目标数量: ` + len);
   for (let i=0; i<len; i++) {
     let product = products[i];
     // 数据库查重（根据商品 ID 加 价格单位）
-    const condition = { originalId: product.product_id };
-    const docExist = await db.products.findOne(condition);
+    let condition = { originalId: product.product_id };
+    let docExist = await db.products.findOne(condition);
     if (docExist) {
       log.info('当前国别商品已抓取，无需重复抓取');
     } else {
@@ -238,27 +239,26 @@ async function run() {
             videoHeight: videoObj.height || 0,
           };
           await dbUtils.saveProductVideoInfo(videoInfo);
+          log.info(`产品ID ${product.product_id} 的视频保存成功!`);
         }
       } catch (e) {
         log.error('下载保存视频失败');
         log.error(e);
       }
-      log.info(`产品ID ${product.product_id} 的视频保存成功!`);
     }
-    await db.sustainedJobs.update({
-      shortId: jobId,
-    },{ 
-      "$set": {
-        updateAt: new Date(),
-        status: 4
-      }
-    });
-    
-    log.info('此批次任务抓取成功!');
-    process.exit(0);
   }
 
-  log.info(`产品抓取目标数量: ` + jobInfo.num);
+  await db.sustainedJobs.update({
+    shortId: jobId,
+  },{ 
+    "$set": {
+      updateAt: new Date(),
+      status: 4
+    }
+  });
+  
+  log.info('此批次任务抓取成功!');
+  process.exit(0);
 }
 
 run();
