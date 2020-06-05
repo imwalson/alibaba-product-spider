@@ -37,13 +37,13 @@ async function createSustainedJob(options) {
 createSustainedJob({
   shortId: jobId, // 任务短ID
   type: 2,
-  name: '抓取 TT 选品 excel 表类目 Beauty & Personal Care', // 任务名称
+  name: '抓取 TT 选品 excel 表类目 Kitchen & Tabletop', // 任务名称
   createAt: new Date(), // 创建时间
   updateAt: new Date(), // 最后更新时间
   finished: false, // 任务是否完成
-  num: 35195, // 抓取数量
+  num: 18663, // 抓取数量
   status: 1, // 任务状态: 1.已创建未开始 2.运行中 3.运行成功 4.运行失败
   catLevel: 'cate_lv1_id', // 级别
-  catId: '66', // 列表页面
+  catId: '205876704', // 列表页面
 })
 
